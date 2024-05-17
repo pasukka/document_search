@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 from document_searcher.config import load_config
 
@@ -8,8 +7,7 @@ class IntentSummarizer:
     hf_token: str
 
     def __init__(self):
-        load_dotenv()
-        self.hf_token = os.getenv('HUGGINGFACE_TOKEN')
+        self.hf_token = os.getenv('HUGGINGFACE_INTENT_TOKEN')
         config = load_config('config.yml')
         self.model = config.llm
         self.llm = InferenceClient(model=self.model,
