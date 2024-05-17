@@ -7,6 +7,9 @@ name = "pypi"
 python-dotenv = "*"
 telebot = "*"
 huggingface-hub = "*"
+pandas = "*"
+langchain = "*"
+faiss-cpu = "*"
 
 [dev-packages]
 
