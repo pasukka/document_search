@@ -17,13 +17,14 @@ class DocumentSearcher:
     def __init__(self):
         load_dotenv()
         self.hf_token = os.getenv('HUGGINGFACE_TOKEN')
-        self.intent_summarizer = IntentSummarizer()
-        self.context_retriever = ContextRetriever()
         config = load_config('config.yml')
         self.model = config.llm
+        self.docs_path = config.docs_path
         self.llm = InferenceClient(model=self.model,
                                    timeout=8,
                                    token=self.hf_token)
+        self.intent_summarizer = IntentSummarizer()
+        self.context_retriever = ContextRetriever(self.docs_path)
 
     def _summarize_user_intent(self, query: str) -> str:
         intent = self.intent_summarizer(query, self._make_str_chat_history())
@@ -43,7 +44,7 @@ class DocumentSearcher:
         prompt = prompt.replace('{context}', context)
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
-                                            max_new_tokens=100).strip()
+                                            max_new_tokens=300).strip()
         return response
 
     def _make_str_chat_history(self) -> str:
@@ -53,6 +54,7 @@ class DocumentSearcher:
         return chat_history_str
 
     def ask(self, query: str) -> str:
+        print("Finding best answer ...\n")
         user_intent = self._summarize_user_intent(query)
         context_list = self._get_context(user_intent)
         user_message = {"role": USER, "content": query}
