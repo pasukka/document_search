@@ -13,12 +13,12 @@ class IntentSummarizer:
         self.llm = InferenceClient(model=self.model,
                                    timeout=8,
                                    token=self.hf_token)
-
-    def __call__(self, query: str, chat_history: str) -> str:
         prompt_path = "./prompts/user_intent.txt"
         with open(prompt_path, 'r', encoding='utf-8') as file:
-            prompt = file.read()
-        prompt = prompt.replace('{chat_history}', chat_history)
+            self.template_prompt = file.read()
+
+    def __call__(self, query: str, chat_history: str) -> str:
+        prompt = self.template_prompt.replace('{chat_history}', chat_history)
         prompt = prompt.replace('{query}', query)
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
