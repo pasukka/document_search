@@ -1,28 +1,20 @@
-import telebot
-import os
-from dotenv import load_dotenv
+from document_searcher.document_searcher import DocumentSearcher
 
-load_dotenv()
-bot = telebot.TeleBot(os.getenv('CHATBOT_KEY'))
-
-
-# keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-# button_import = telebot.types.KeyboardButton(text="Загрузить файлы")
-# button_info = telebot.types.KeyboardButton(text="Найти информацию")
-# keyboard.add(button_import)
-# keyboard.add(button_info)
 
 class DocumentSearchBot:
 
-    @bot.message_handler(commands=['start'])
-    def handle_start(message):
-        bot.send_message(
-            message.chat.id, 'Добро пожаловать в бот для поиска информации по документу')  # reply_markup=keyboard
+    def __init__(self):
+        self.ds = DocumentSearcher()
 
-    @bot.message_handler(content_types=['text'])
-    def handle_message(message):
-        # if message.text == 'Найти информацию':
-        bot.send_message(message.chat.id, f'Yep!')
+    def get_info(self) -> str:
+        info_str = f"Добро пожаловать в бот для поиска информации по документу!\n" \
+            "Если у тебя есть вопрос, задай его или нажми *Найти информацию*.\n" \
+            "Для загрузки файла, по которому необходимо проводить поиск нажми *Загрузить файл*."
+        return info_str
 
-    def start(self):
-        bot.polling(none_stop=True, interval=0)
+    def get_answer_message(self) -> str:
+        return f'Отлично! Что необходимо найти?'
+
+    def ask(self, message: str) -> str:
+        answer = self.ds.ask(message)
+        return answer
