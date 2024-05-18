@@ -14,22 +14,22 @@ class ContextRetriever:
     docs: list
 
     def __init__(self, docs_path):
-        super().__init__()
         self.similarity_docs = []
-        path = docs_path
-        list_of_texts = [f for f in listdir(path) if isfile(join(path, f))]
-
-        for i in range(len(list_of_texts)):
-            with open(path + list_of_texts[i], 'r', encoding='utf-8') as file:
-                text = file.read()
-                self.similarity_docs.append({"id": i, "text": text})
+        self.path = docs_path
+        self.load_files()
 
     def __call__(self, user_intent: str) -> list[str]:
-        # TODO: make summarization [doc["content"] for doc in self.similarity_docs]
+        # [doc["content"] for doc in self.similarity_docs]
         context_list = self.search_docs(user_intent)
         return context_list
 
-    def search_docs(self, query: str):
+    def load_files(self):
+        list_of_texts = [f for f in listdir(
+            self.path) if isfile(join(self.path, f))]
+        for i in range(len(list_of_texts)):
+            with open(self.path + list_of_texts[i], 'r', encoding='utf-8') as file:
+                text = file.read()
+                self.similarity_docs.append({"id": i, "text": text})
         df = pd.DataFrame(self.similarity_docs)
         df.head()
 
@@ -41,14 +41,18 @@ class ContextRetriever:
                                                        chunk_overlap=0)
         texts = text_splitter.split_documents(documents)
 
-        embeddings = HuggingFaceHubEmbeddings(repo_id=self.model_id,
+        self.docs_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model_id,
                                               task="feature-extraction",
                                               huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
 
+        
         # making db
-        # TODO: save somewhere
-        db = FAISS.from_documents(texts, embeddings)
-        db.as_retriever()
+        # TODO: mb save somewhere
+        self.db = FAISS.from_documents(texts, self.docs_embeddings)
+        self.db.as_retriever()
 
-        embedding_vector = embeddings.embed_query(query)
-        return db.similarity_search_by_vector(embedding_vector)
+    def search_docs(self, query: str):
+        # TODO: take embeddings from db
+        embedding_vector = self.docs_embeddings.embed_query(query)
+        similarity_search = self.db.similarity_search_by_vector(embedding_vector)
+        return similarity_search
