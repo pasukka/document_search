@@ -1,6 +1,6 @@
 from document_searcher.document_searcher import DocumentSearcher
 
-
+#TODO: make /help; add that for searching only one text need to /start again
 class DocumentSearchBot:
 
     def __init__(self):
@@ -18,3 +18,12 @@ class DocumentSearchBot:
     def ask(self, message: str) -> str:
         answer = self.ds.ask(message)
         return answer
+    
+    def restart(self):
+        self.ds.restart()
+
+    def load_file(self, document_file_name, downloaded_file):
+        src = self.ds.new_docs_path + document_file_name
+        with open(src, 'wb') as new_file:
+            new_file.write(downloaded_file)
+        self.ds.change_docs_path()
