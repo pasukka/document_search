@@ -53,15 +53,17 @@ def handle_message(message):
             answer = ds_bot.ask(message.text)
             bot.send_message(message.chat.id,
                              answer)
-        except ValueError:
+        except ValueError as e:
             bot.send_message(message.chat.id,
                              ds_bot.error_token_response())
+            print(e)
         except TimeoutError:
             time.sleep(2)
             handle_message(message)
         except Exception as e:
             bot.send_message(message.chat.id,
                              ds_bot.unknown_error_response())
+            print(e)
             pass
 
 
