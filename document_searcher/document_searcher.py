@@ -1,6 +1,8 @@
 import os
 import time
 import requests
+import urllib3.exceptions
+from urllib3.exceptions import ReadTimeoutError
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 
@@ -11,6 +13,7 @@ from document_searcher.config import load_config
 USER = "user"
 ASSISTANT = "assistant"
 
+# TODO: mb add class for errors
 
 class DocumentSearcher:
     hf_token: str
@@ -28,6 +31,7 @@ class DocumentSearcher:
                                    token=self.hf_token)
         self.intent_summarizer = IntentSummarizer()
         self.context_retriever = ContextRetriever(self.docs_path)
+        self.error = ""
 
         with open("./prompts/find_answer.txt", 'r', encoding='utf-8') as file:
             self.prompt_template = file.read()
@@ -77,9 +81,23 @@ class DocumentSearcher:
 
             assistant_message = {"role": ASSISTANT, "content": response}
             self.chat_history.append(assistant_message)
-        except TimeoutError or requests.exceptions.ReadTimeout:
+        except TimeoutError or urllib3.exceptions.ReadTimeoutError:
+            self.error = 1
+            print('Error code: ', self.error)
             time.sleep(2)
+        except requests.exceptions.ReadTimeout or ReadTimeoutError:
+            self.error = 1
+            print('Error code: ', self.error)
+            time.sleep(4)
             self.ask(query)
+        except ValueError:
+            self.error = 2
+            print('Error code: ', self.error)
+            pass
+        except Exception:
+            self.error = 1
+            print('Error code: ', self.error)
+            pass
         return response
 
     def restart(self):
