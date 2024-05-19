@@ -1,6 +1,12 @@
 from document_searcher.document_searcher import DocumentSearcher
 
-#TODO: make /help; add that for searching only one text need to /start again
+# TODO: make /help;
+# TODO: add that for searching only one text need to /start again (need to do for 1 or for many docs)
+# TODO: for each user we need to have new name of dir f their files (by id)
+
+# TODO: mb add some comments
+
+
 class DocumentSearchBot:
 
     def __init__(self):
@@ -18,7 +24,7 @@ class DocumentSearchBot:
     def ask(self, message: str) -> str:
         answer = self.ds.ask(message)
         return answer
-    
+
     def restart(self):
         self.ds.restart()
 
