@@ -1,6 +1,7 @@
 import telebot
 import os
 import time
+import requests
 from dotenv import load_dotenv
 
 from chatbot.chatbot import DocumentSearchBot
@@ -49,22 +50,12 @@ def handle_message(message):
     elif message.text == help:
         handle_help(message)
     else:
-        try:
-            answer = ds_bot.ask(message.text)
+        answer = ds_bot.ask(message.text)
+        if answer != '':
+            bot.send_message(message.chat.id, answer)
+        else:
             bot.send_message(message.chat.id,
-                             answer)
-        except ValueError as e:
-            bot.send_message(message.chat.id,
-                             ds_bot.error_token_response())
-            print(e)
-        except TimeoutError:
-            time.sleep(2)
-            handle_message(message)
-        except Exception as e:
-            bot.send_message(message.chat.id,
-                             ds_bot.unknown_error_response())
-            print(e)
-            pass
+                             ds_bot.get_error_message())
 
 
 @bot.message_handler(content_types=['document'])
@@ -77,9 +68,9 @@ def load_document(message):
                              ds_bot.waiting_for_loading_response())
             try:
                 ds_bot.load_file(message.from_user.id,
-                                    message.document.file_name, downloaded_file)
+                                 message.document.file_name, downloaded_file)
                 bot.send_message(message.chat.id,
-                                ds_bot.success_file_loading_response())
+                                 ds_bot.success_file_loading_response())
             except Exception as e:
                 bot.send_message(message.chat.id,
                                  ds_bot.loading_file_error_response())
@@ -89,7 +80,7 @@ def load_document(message):
     else:
         bot.send_message(ds_bot.error_file_format_response())
 
-
+# TODO: here also can be errors like urllib3.exceptions.MaxRetryError
 def main():
     bot.polling(none_stop=True, interval=0)
 
