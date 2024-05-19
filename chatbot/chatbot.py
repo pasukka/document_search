@@ -4,6 +4,11 @@ import json
 from document_searcher.document_searcher import DocumentSearcher
 
 # TODO: different strategies for searching one text or many docs
+
+# TODO: strategy for adding document forever for user (should not be deleted); 
+# adding document or documents for one try (should be deleted after restart)
+# having some documents about computational linguistics
+
 # TODO: mb add some comments
 # TODO: do smth with big amount of funcs
 
