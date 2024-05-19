@@ -7,50 +7,51 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceHubEmbeddings
 
+# TODO: save db somewhere and then extract info; for quickness
+# TODO: try summarization instead of splitting
+
 
 class ContextRetriever:
-    model_id = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-    similarity_docs: list
-    docs: list
+    model: str
+    documents_path: str
 
-    def __init__(self, docs_path):
-        self.similarity_docs = []
-        self.path = docs_path
-        self.load_files()
-        self.docs_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model_id,
-                                                        task="feature-extraction",
-                                                        huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
+    def __init__(self, documents_path):
+        self.model = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+        self.documents_path = documents_path
+        self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
+                                                             task="feature-extraction",
+                                                             huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
+        self.load_data_base()
 
     def __call__(self, user_intent: str) -> list[str]:
-        similar_docs = self.search_docs(user_intent)
-        context_list = [doc.page_content for doc in similar_docs]
-        return context_list
+        relevant_documents = self.find_relevant_documents(user_intent)
+        documents_context_list = [doc.page_content for doc in relevant_documents]
+        return documents_context_list
 
-    def load_files(self):
-        list_of_texts = [f for f in listdir(self.path)
-                         if isfile(join(self.path, f))]
-        for i in range(len(list_of_texts)):
-            with open(self.path + list_of_texts[i], 'r', encoding='utf-8') as file:
-                text = file.read()
-                self.similarity_docs.append({"id": i, "text": text})
-        df = pd.DataFrame(self.similarity_docs)
-        df.head()
-
+    def load_data_base(self):
+        documents = self.load_documents()
+        df = pd.DataFrame(documents)
         loader = DataFrameLoader(df, page_content_column='text')
-        documents = loader.load()
+        loaded_documents = loader.load()
 
-        # TODO: change to summarization
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
                                                        chunk_overlap=0)
-        texts = text_splitter.split_documents(documents)
+        splitted_documents = text_splitter.split_documents(loaded_documents)
+        
+        self.db = FAISS.from_documents(splitted_documents,
+                                       self.documents_embeddings)
 
-        # making db
-        # TODO: mb save somewhere
-        self.db = FAISS.from_documents(texts, self.docs_embeddings)
-        self.db.as_retriever()
+    def load_documents(self):
+        list_of_documents = [f for f in listdir(self.documents_path)
+                             if isfile(join(self.documents_path, f))]
+        documents = []
+        for i in range(len(list_of_documents)):
+            with open(self.documents_path + list_of_documents[i], 'r', encoding='utf-8') as file:
+                text = file.read()
+                documents.append({"id": i, "text": text})
+        return documents
 
-    def search_docs(self, query: str):
-        embedding_vector = self.docs_embeddings.embed_query(query)
-        similarity_search = self.db.similarity_search_by_vector(
-            embedding_vector)
-        return similarity_search
+    def find_relevant_documents(self, query: str):
+        embedding_vector = self.documents_embeddings.embed_query(query)
+        relevant_docs = self.db.similarity_search_by_vector(embedding_vector)
+        return relevant_docs
