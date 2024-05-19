@@ -2,7 +2,6 @@ import os
 from huggingface_hub import InferenceClient
 from document_searcher.config import load_config
 
-# TODO: work with intent more for less hallucinating 
 
 class IntentSummarizer:
     hf_token: str
