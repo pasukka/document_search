@@ -5,9 +5,14 @@ from document_searcher.document_searcher import DocumentSearcher
 
 # TODO: different strategies for searching one text or many docs
 
-# TODO: strategy for adding document forever for user (should not be deleted); 
-# adding document or documents for one try (should be deleted after restart)
-# having some documents about computational linguistics
+# TODO: для /start и т.д. сделать описание по-русски
+
+# TODO: different strategies
+# найти информацию: поиск будет прохдиь по коллекции "такой-то", для смены /change_collection
+# загрузить файл: нужно инфо а затем две кнопки 1) в свою коллекцию (не более 10 файлов!) 2) для анализа (будет deleted after restart)
+# помощь: подробное описание всего
+# /change_collection - изменить поисковую коллекцию: 1) своя коллекция 2) коллекция по компьютерной лингвистике
+
 
 # TODO: mb add some comments
 # TODO: do smth with big amount of funcs
@@ -52,17 +57,18 @@ class DocumentSearchBot:
     def success_file_loading_response(self) -> str:
         return self.metadata["response"]["file_loaded_response"]
 
+    def get_error_message(self) -> str:
+        error = self.doc_searcher.error
+        error_str = self.metadata["error"]["unknown_error_response"]
+        if error == 2:
+            error_str = self.metadata["error"]["error_token_response"]
+        return error_str
+
     def error_file_format_response(self) -> str:
         return self.metadata["error"]["error_file_format"]
 
     def loading_file_error_response(self) -> str:
         return self.metadata["error"]["loading_file_error"]
-
-    def error_token_response(self) -> str:
-        return self.metadata["error"]["error_token_response"]
-
-    def unknown_error_response(self) -> str:
-        return self.metadata["error"]["unknown_error_response"]
 
     def ask(self, message: str) -> str:
         answer = self.doc_searcher.ask(message)
