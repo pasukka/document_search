@@ -17,15 +17,18 @@ class ContextRetriever:
         self.similarity_docs = []
         self.path = docs_path
         self.load_files()
+        self.docs_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model_id,
+                                                        task="feature-extraction",
+                                                        huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
 
     def __call__(self, user_intent: str) -> list[str]:
-        # [doc["content"] for doc in self.similarity_docs]
-        context_list = self.search_docs(user_intent)
+        similar_docs = self.search_docs(user_intent)
+        context_list = [doc.page_content for doc in similar_docs]
         return context_list
 
     def load_files(self):
-        list_of_texts = [f for f in listdir(
-            self.path) if isfile(join(self.path, f))]
+        list_of_texts = [f for f in listdir(self.path)
+                         if isfile(join(self.path, f))]
         for i in range(len(list_of_texts)):
             with open(self.path + list_of_texts[i], 'r', encoding='utf-8') as file:
                 text = file.read()
@@ -41,18 +44,13 @@ class ContextRetriever:
                                                        chunk_overlap=0)
         texts = text_splitter.split_documents(documents)
 
-        self.docs_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model_id,
-                                              task="feature-extraction",
-                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
-
-        
         # making db
         # TODO: mb save somewhere
         self.db = FAISS.from_documents(texts, self.docs_embeddings)
         self.db.as_retriever()
 
     def search_docs(self, query: str):
-        # TODO: take embeddings from db
         embedding_vector = self.docs_embeddings.embed_query(query)
-        similarity_search = self.db.similarity_search_by_vector(embedding_vector)
+        similarity_search = self.db.similarity_search_by_vector(
+            embedding_vector)
         return similarity_search
