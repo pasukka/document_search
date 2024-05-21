@@ -20,25 +20,7 @@ Project installation:
 pipenv install
 ```
 
-
-<!--
-Search document:
+For searching document using console program use:
 ```
 pipenv run python run_prediction.py
 ```
-
-Using bot:
-```
-pipenv run python run_prediction.py
-```
--->
-
-
-<!--
-#TODO: add smth about files like metadata and so on
-CHATBOT_KEY
-HUGGINGFACE_TOKEN
-HUGGINGFACE_EMBEDDINGS_TOKEN
-HUGGINGFACE_INTENT_TOKEN
-in env
- -->
