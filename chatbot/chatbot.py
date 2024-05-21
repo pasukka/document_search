@@ -3,16 +3,11 @@ import json
 
 from document_searcher.document_searcher import DocumentSearcher
 
-# TODO: different strategies for searching one text or many docs
+# TODO: /start etc.; make descriptions in Russian
 
-# TODO: для /start и т.д. сделать описание по-русски
+# TODO: add info that before restarting all docs are saved; /start cleans local docs
 
-# TODO: different strategies
-# найти информацию: поиск будет прохдиь по коллекции "такой-то", для смены /change_collection
-# загрузить файл: нужно инфо а затем две кнопки 1) в свою коллекцию (не более 10 файлов!) 2) для анализа (будет deleted after restart)
-# помощь: подробное описание всего
-# /change_collection - изменить поисковую коллекцию: 1) своя коллекция 2) коллекция по компьютерной лингвистике
-
+# TODO: add /clean for cleaning local docs
 
 # TODO: mb add some comments
 # TODO: do smth with big amount of funcs
