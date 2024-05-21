@@ -84,9 +84,9 @@ class DocumentSearcher:
         except TimeoutError or urllib3.exceptions.ReadTimeoutError:
             self.error = 1
             print('Error code: ', self.error)
-            time.sleep(2)
+            time.sleep(4)
         except requests.exceptions.ReadTimeout or ReadTimeoutError:
-            self.error = 1
+            self.error = 3
             print('Error code: ', self.error)
             time.sleep(4)
             self.ask(query)
@@ -95,7 +95,7 @@ class DocumentSearcher:
             print('Error code: ', self.error)
             pass
         except Exception:
-            self.error = 1
+            self.error = 4
             print('Error code: ', self.error)
             pass
         return response
