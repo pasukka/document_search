@@ -1,12 +1,9 @@
 import telebot
 import os
-import time
-import requests
 from dotenv import load_dotenv
 
 from chatbot.chatbot import DocumentSearchBot
 
-# TODO: check for TimeoutError everywhere and Huggingface tokens
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv('CHATBOT_KEY'))
@@ -14,6 +11,7 @@ ds_bot = DocumentSearchBot()
 find_info = ds_bot.get_button_find_info()
 load_file = ds_bot.get_button_load_file()
 help = ds_bot.get_button_help()
+clean = ds_bot.get_button_clean()
 
 
 @bot.message_handler(commands=['start'])
@@ -22,8 +20,9 @@ def handle_start(message):
     button_info = telebot.types.KeyboardButton(text=find_info)
     button_import = telebot.types.KeyboardButton(text=load_file)
     button_help = telebot.types.KeyboardButton(text=help)
-    keyboard.row(button_info)
-    keyboard.row(button_import, button_help)
+    button_clean = telebot.types.KeyboardButton(text=clean)
+    keyboard.row(button_info, button_import)
+    keyboard.row(button_help, button_clean)
 
     ds_bot.restart()
     bot.send_message(message.chat.id,
@@ -39,6 +38,14 @@ def handle_help(message):
                      parse_mode='Markdown')
 
 
+@bot.message_handler(commands=['clean'])
+def handle_clean(message):
+    ds_bot.clean_dir()
+    bot.send_message(message.chat.id,
+                     ds_bot.get_clean_info(),
+                     parse_mode='Markdown')
+
+
 @bot.message_handler(content_types=['text'])
 def handle_message(message):
     if message.text == find_info:
@@ -49,13 +56,11 @@ def handle_message(message):
                          ds_bot.load_file_response())
     elif message.text == help:
         handle_help(message)
+    elif message.text == clean:
+        handle_clean(message)
     else:
         answer = ds_bot.ask(message.text)
-        if answer != '':
-            bot.send_message(message.chat.id, answer)
-        else:
-            bot.send_message(message.chat.id,
-                             ds_bot.get_error_message())
+        bot.send_message(message.chat.id, answer)
 
 
 @bot.message_handler(content_types=['document'])
@@ -80,7 +85,7 @@ def load_document(message):
     else:
         bot.send_message(ds_bot.error_file_format_response())
 
-# TODO: here also can be errors like urllib3.exceptions.MaxRetryError
+
 def main():
     bot.polling(none_stop=True, interval=0)
 
