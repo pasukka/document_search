@@ -10,6 +10,7 @@ huggingface-hub = "*"
 pandas = "*"
 langchain = "*"
 faiss-cpu = "*"
+langchain-community = "*"
 
 [dev-packages]
 
