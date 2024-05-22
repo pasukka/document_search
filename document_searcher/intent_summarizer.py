@@ -12,7 +12,7 @@ class IntentSummarizer:
         config = load_config('config.yml')
         self.model = config.llm
         self.llm = InferenceClient(model=self.model,
-                                   timeout=8,
+                                   timeout=100,
                                    token=self.hf_token)
         with open("./prompts/user_intent.txt", 'r', encoding='utf-8') as file:
             self.prompt_template = file.read()
