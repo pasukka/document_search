@@ -1,19 +1,14 @@
 import os
 import json
+import time
 
 from document_searcher.document_searcher import DocumentSearcher
 
-# TODO: /start etc.; make descriptions in Russian
-
-# TODO: add info that before restarting all docs are saved; /start cleans local docs
-
-# TODO: add /clean for cleaning local docs
-
-# TODO: mb add some comments
 # TODO: do smth with big amount of funcs
 
-# TODO: add legal stopping program
 # TODO: take 'user_dir_path' from bot or when stopping program clean everything
+
+MAX_RETRIES = 2
 
 
 class DocumentSearchBot:
@@ -22,6 +17,7 @@ class DocumentSearchBot:
         self.doc_searcher = DocumentSearcher()
         self.docs_path = self.doc_searcher.docs_path
         self.user_dir_path = ''
+        self.retries = 0
         with open('metadata/metadata.json', 'r', encoding='utf-8') as file:
             self.metadata = json.load(file)
 
@@ -31,6 +27,9 @@ class DocumentSearchBot:
     def get_help_info(self) -> str:
         return self.metadata["info"]["help_info"]
 
+    def get_clean_info(self) -> str:
+        return self.metadata["info"]["clean_info"]
+
     def get_button_find_info(self) -> str:
         return self.metadata["button"]["button_find_info"]
 
@@ -39,6 +38,9 @@ class DocumentSearchBot:
 
     def get_button_help(self) -> str:
         return self.metadata["button"]["button_help"]
+
+    def get_button_clean(self) -> str:
+        return self.metadata["button"]["button_clean"]
 
     def get_find_message(self) -> str:
         return self.metadata["response"]["find_response"]
@@ -53,10 +55,14 @@ class DocumentSearchBot:
         return self.metadata["response"]["file_loaded_response"]
 
     def get_error_message(self) -> str:
-        error = self.doc_searcher.error
-        error_str = self.metadata["error"]["unknown_error_response"]
-        if error == 2:
+        error = self.doc_searcher.error_code
+        error_str = ""
+        if error == 1:
+            error_str = self.metadata["error"]["error_runtime"]
+        elif error == 2:
             error_str = self.metadata["error"]["error_token_response"]
+        else:
+            error_str = self.metadata["error"]["unknown_error_response"]
         return error_str
 
     def error_file_format_response(self) -> str:
@@ -66,18 +72,18 @@ class DocumentSearchBot:
         return self.metadata["error"]["loading_file_error"]
 
     def ask(self, message: str) -> str:
-        answer = self.doc_searcher.ask(message)
+        answer = ""
+        while answer == "" and self.retries < MAX_RETRIES:
+            answer = self.doc_searcher.ask(message)
+            self.retries += 1
+            time.sleep(4)
+        if answer == "":
+            answer = self.get_error_message()
+        self.retries = 0
         return answer
 
     def restart(self):
-        if os.path.exists(self.user_dir_path):
-            filelist = [f for f in os.listdir(self.user_dir_path)]
-            try:
-                for f in filelist:
-                    os.remove(os.path.join(self.user_dir_path, f))
-                os.rmdir(self.user_dir_path)
-            except Exception:
-                pass
+        self.clean_dir()
         self.doc_searcher.restart()
 
     def load_file(self, chat_id, document_file_name, downloaded_file):
@@ -88,3 +94,13 @@ class DocumentSearchBot:
         with open(src, 'wb') as new_file:
             new_file.write(downloaded_file)
         self.doc_searcher.change_docs_path(self.user_dir_path)
+
+    def clean_dir(self):
+        if os.path.exists(self.user_dir_path):
+            filelist = [f for f in os.listdir(self.user_dir_path)]
+            try:
+                for f in filelist:
+                    os.remove(os.path.join(self.user_dir_path, f))
+                os.rmdir(self.user_dir_path)
+            except Exception:
+                pass
