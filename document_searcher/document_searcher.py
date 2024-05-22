@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 import urllib3.exceptions
 from urllib3.exceptions import ReadTimeoutError
@@ -13,7 +12,6 @@ from document_searcher.config import load_config
 USER = "user"
 ASSISTANT = "assistant"
 
-# TODO: mb add class for errors
 
 class DocumentSearcher:
     hf_token: str
@@ -27,11 +25,11 @@ class DocumentSearcher:
         self.docs_path = self.config.docs_path
         self.log_messages = self.config.log_messages
         self.llm = InferenceClient(model=self.model,
-                                   timeout=8,
+                                   timeout=100,
                                    token=self.hf_token)
         self.intent_summarizer = IntentSummarizer()
         self.context_retriever = ContextRetriever(self.docs_path)
-        self.error = ""
+        self.error_code = 0
 
         with open("./prompts/find_answer.txt", 'r', encoding='utf-8') as file:
             self.prompt_template = file.read()
@@ -60,6 +58,7 @@ class DocumentSearcher:
         return chat_history_str
 
     def ask(self, query: str) -> str:
+        response = ""
         try:
             if self.log_messages:
                 print("Finding best answer ...\n")
@@ -81,23 +80,15 @@ class DocumentSearcher:
 
             assistant_message = {"role": ASSISTANT, "content": response}
             self.chat_history.append(assistant_message)
-        except TimeoutError or urllib3.exceptions.ReadTimeoutError:
-            self.error = 1
-            print('Error code: ', self.error)
-            time.sleep(4)
-        except requests.exceptions.ReadTimeout or ReadTimeoutError:
-            self.error = 3
-            print('Error code: ', self.error)
-            time.sleep(4)
-            self.ask(query)
-        except ValueError:
-            self.error = 2
-            print('Error code: ', self.error)
-            pass
-        except Exception:
-            self.error = 4
-            print('Error code: ', self.error)
-            pass
+        except requests.exceptions.ReadTimeout or ReadTimeoutError or urllib3.exceptions.ReadTimeoutError or TimeoutError as e:
+            self.error_code = 1
+            print(self.error_code, e)
+        except ValueError as e:
+            self.error_code = 2
+            print(self.error_code, e)
+        except Exception as e:
+            self.error_code = 3
+            print(self.error_code, e)
         return response
 
     def restart(self):
@@ -105,4 +96,4 @@ class DocumentSearcher:
         self.docs_path = self.config.docs_path
 
     def change_docs_path(self, new_docs_path):
-        self.context_retriever = ContextRetriever(new_docs_path)
+        self.context_retriever = ContextRetriever(new_docs_path, load_from_db=False)
