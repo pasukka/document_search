@@ -12,14 +12,14 @@ class ContextRetriever:
     model: str
     documents_path: str
 
-    def __init__(self, documents_path):
+    def __init__(self, documents_path, load_from_db=True):
         self.model = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
         self.documents_path = documents_path
         self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
                                                              task="feature-extraction",
                                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
         self.db_dir = './database/'
-        self.load_data_base()
+        self.load_data_base(load_from_db)
 
     def __call__(self, user_intent: str) -> list[str]:
         relevant_documents = self.find_relevant_documents(user_intent)
@@ -27,9 +27,9 @@ class ContextRetriever:
             doc.page_content for doc in relevant_documents]
         return documents_context_list
 
-    def load_data_base(self):
-        if os.path.exists(self.db_dir):
-            # TODO: check way without allow_dangerous_deserialization
+    def load_data_base(self, load_from_db=True):
+        if os.path.exists(self.db_dir) and load_from_db:
+            # loading needs allow_dangerous_deserialization
             self.db = FAISS.load_local(
                 self.db_dir, self.documents_embeddings, allow_dangerous_deserialization=True)
         else:
