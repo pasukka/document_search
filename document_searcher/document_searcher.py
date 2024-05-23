@@ -11,7 +11,7 @@ from document_searcher.config import load_config
 
 USER = "user"
 ASSISTANT = "assistant"
-
+# TODO: tests
 
 class DocumentSearcher:
     hf_token: str
@@ -38,6 +38,7 @@ class DocumentSearcher:
         intent = self.intent_summarizer(query, self._make_str_chat_history())
         return intent
 
+    #TODO: make it understand "thanks"
     def _get_context(self, user_intent: str) -> list[str]:
         documents_context_list = self.context_retriever(user_intent)
         return documents_context_list
