@@ -6,8 +6,6 @@ from document_searcher.document_searcher import DocumentSearcher
 
 # TODO: do smth with big amount of funcs
 
-# TODO: take 'user_dir_path' from bot or when stopping program clean everything
-
 MAX_RETRIES = 2
 
 
@@ -16,10 +14,10 @@ class DocumentSearchBot:
     def __init__(self):
         self.doc_searcher = DocumentSearcher()
         self.docs_path = self.doc_searcher.docs_path
-        self.user_dir_path = ''
         self.retries = 0
         with open('metadata/metadata.json', 'r', encoding='utf-8') as file:
             self.metadata = json.load(file)
+        self.clean_all_user_dirs()
 
     def get_start_info(self) -> str:
         return self.metadata["info"]["start_info"]
@@ -82,25 +80,31 @@ class DocumentSearchBot:
         self.retries = 0
         return answer
 
-    def restart(self):
-        self.clean_dir()
+    def restart(self, chat_id):
+        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        self.clean_user_dir(user_dir_path)
         self.doc_searcher.restart()
 
     def load_file(self, chat_id, document_file_name, downloaded_file):
-        self.user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
-        if not os.path.exists(self.user_dir_path):
-            os.makedirs(self.user_dir_path)
-        src = self.user_dir_path + document_file_name
+        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        if not os.path.exists(user_dir_path):
+            os.makedirs(user_dir_path)
+        src = user_dir_path + document_file_name
         with open(src, 'wb') as new_file:
             new_file.write(downloaded_file)
-        self.doc_searcher.change_docs_path(self.user_dir_path)
+        self.doc_searcher.change_docs_path(user_dir_path)
 
-    def clean_dir(self):
-        if os.path.exists(self.user_dir_path):
-            filelist = [f for f in os.listdir(self.user_dir_path)]
+    def clean_all_user_dirs(self):
+        dirlist = [f for f in os.listdir(self.docs_path) if f.startswith('chat_')]
+        for dir in dirlist:
+            self.clean_user_dir(self.docs_path+dir)
+
+    def clean_user_dir(self, user_dir):
+        if os.path.exists(user_dir):
+            filelist = [f for f in os.listdir(user_dir)]
             try:
                 for f in filelist:
-                    os.remove(os.path.join(self.user_dir_path, f))
-                os.rmdir(self.user_dir_path)
+                    os.remove(os.path.join(user_dir, f))
+                os.rmdir(user_dir)
             except Exception:
                 pass
