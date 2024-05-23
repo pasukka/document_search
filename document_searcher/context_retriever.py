@@ -18,7 +18,6 @@ class ContextRetriever:
         self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
                                                              task="feature-extraction",
                                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
-        self.db_dir = './database/'
         self.load_data_base(load_from_db)
 
     def __call__(self, user_intent: str) -> list[str]:
@@ -28,10 +27,12 @@ class ContextRetriever:
         return documents_context_list
 
     def load_data_base(self, load_from_db=True):
-        if os.path.exists(self.db_dir) and load_from_db:
+        db_dir = self.documents_path
+        if os.path.exists(db_dir+'index.faiss') and load_from_db:
             # loading needs allow_dangerous_deserialization
-            self.db = FAISS.load_local(
-                self.db_dir, self.documents_embeddings, allow_dangerous_deserialization=True)
+            self.db = FAISS.load_local(db_dir, 
+                                       self.documents_embeddings, 
+                                       allow_dangerous_deserialization=True)
         else:
             documents = self.load_documents()
             df = pd.DataFrame(documents)
@@ -47,7 +48,7 @@ class ContextRetriever:
             self.db = FAISS.from_documents(splitted_documents,
                                            self.documents_embeddings)
             # [Document(page_content='text', metadata={id:1})]
-            self.db.save_local(self.db_dir)
+            self.db.save_local(db_dir)
 
     def load_documents(self):
         list_of_documents = [f for f in listdir(self.documents_path)
