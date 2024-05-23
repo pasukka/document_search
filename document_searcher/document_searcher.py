@@ -13,6 +13,7 @@ USER = "user"
 ASSISTANT = "assistant"
 # TODO: tests
 
+
 class DocumentSearcher:
     hf_token: str
 
@@ -38,7 +39,6 @@ class DocumentSearcher:
         intent = self.intent_summarizer(query, self._make_str_chat_history())
         return intent
 
-    #TODO: make it understand "thanks"
     def _get_context(self, user_intent: str) -> list[str]:
         documents_context_list = self.context_retriever(user_intent)
         return documents_context_list
@@ -49,7 +49,8 @@ class DocumentSearcher:
         prompt = prompt.replace('{context}', f"\n{documents_context_list}")
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
-                                            max_new_tokens=300).strip()
+                                            max_new_tokens=300,
+                                            temperature=0.2).strip()
         return response
 
     def _make_str_chat_history(self) -> str:
@@ -97,4 +98,5 @@ class DocumentSearcher:
         self.docs_path = self.config.docs_path
 
     def change_docs_path(self, new_docs_path):
-        self.context_retriever = ContextRetriever(new_docs_path, load_from_db=False)
+        self.context_retriever = ContextRetriever(
+            new_docs_path, load_from_db=False)
