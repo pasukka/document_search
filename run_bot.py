@@ -24,7 +24,7 @@ def handle_start(message):
     keyboard.row(button_info, button_import)
     keyboard.row(button_help, button_clean)
 
-    ds_bot.restart()
+    ds_bot.restart(message.chat.id)
     bot.send_message(message.chat.id,
                      ds_bot.get_start_info(),
                      parse_mode='Markdown',
@@ -40,7 +40,7 @@ def handle_help(message):
 
 @bot.message_handler(commands=['clean'])
 def handle_clean(message):
-    ds_bot.clean_dir()
+    ds_bot.clean_user_dir()
     bot.send_message(message.chat.id,
                      ds_bot.get_clean_info(),
                      parse_mode='Markdown')
