@@ -5,12 +5,14 @@ name = "pypi"
 
 [packages]
 python-dotenv = "*"
-telebot = "*"
 huggingface-hub = "*"
 pandas = "*"
 langchain = "*"
 faiss-cpu = "*"
 langchain-community = "*"
+aiogram = "*"
+torch = "*"
+transformers = "*"
 
 [dev-packages]
 
