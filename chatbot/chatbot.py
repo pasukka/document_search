@@ -4,8 +4,6 @@ import time
 
 from document_searcher.document_searcher import DocumentSearcher
 
-# TODO: do smth with big amount of funcs
-
 MAX_RETRIES = 2
 
 
@@ -85,17 +83,19 @@ class DocumentSearchBot:
         self.clean_user_dir(user_dir_path)
         self.doc_searcher.restart()
 
-    def load_file(self, chat_id, document_file_name, downloaded_file):
+    def change_docs_path(self, chat_id):
+        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        self.doc_searcher.change_docs_path(user_dir_path)
+
+    def get_path(self, chat_id):
         user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
-        src = user_dir_path + document_file_name
-        with open(src, 'wb') as new_file:
-            new_file.write(downloaded_file)
-        self.doc_searcher.change_docs_path(user_dir_path)
+        return user_dir_path
 
     def clean_all_user_dirs(self):
-        dirlist = [f for f in os.listdir(self.docs_path) if f.startswith('chat_')]
+        dirlist = [f for f in os.listdir(self.docs_path)
+                   if f.startswith('chat_')]
         for dir in dirlist:
             self.clean_user_dir(self.docs_path+dir)
 
