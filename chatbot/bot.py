@@ -23,7 +23,15 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 @router.message(Command("help"))
 async def handle_help(message: types.Message):
-    await message.answer(ds_controller.metadata["info"]["help_info"], parse_mode='Markdown')
+    await message.answer(ds_controller.metadata["info"]["help_info"].replace("_", "\\_"), parse_mode='Markdown')
+
+
+@router.message(Command("docs_list"))
+async def handle_docs_list(message: types.Message):
+    docs_list = ds_controller.get_docs_list(message.chat.id)
+    docs_string = "\n".join(docs_list)
+    docs_string += f"\nКоличество файлов: {len(docs_list)}"
+    await message.answer(docs_string)
 
 
 @router.message(Command("start"))
@@ -36,6 +44,7 @@ async def handle_start(message: types.Message):
 
 @router.message(Command("clean"))
 async def handle_clean(message: types.Message):
+    ds_controller.clean_user_dir(chat_id=message.chat.id)
     await message.answer(ds_controller.metadata["info"]["clean_info"],
                          parse_mode='Markdown')
 
@@ -67,6 +76,7 @@ async def handle_message(message: types.Message, bot: Bot):
                 await message.answer(ds_controller.metadata["response"]["file_loaded_response"])
             except Exception as e:
                 await message.answer(ds_controller.metadata["error"]["loading_file_error"])
+                print(e)
         except Exception as e:
             await message.reply(message, e)
     else:
