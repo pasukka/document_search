@@ -41,17 +41,20 @@ class DocumentSearcherController:
         self.retries = 0
         return answer
 
+    def get_user_dir(self, chat_id):
+        return self.docs_path + 'chat_' + str(chat_id) + '/'
+
     def restart(self, chat_id):
-        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        user_dir_path = self.get_user_dir(chat_id)
         self.clean_user_dir(user_dir_path)
         self.doc_searcher.restart()
 
     def change_docs_path(self, chat_id):
-        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        user_dir_path = self.get_user_dir(chat_id)
         self.doc_searcher.change_docs_path(user_dir_path)
 
     def get_path(self, chat_id):
-        user_dir_path = self.docs_path + 'chat_' + str(chat_id) + '/'
+        user_dir_path = self.get_user_dir(chat_id)
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         return user_dir_path
