@@ -13,6 +13,10 @@ async def set_commands(bot: Bot):
             description='информация по работе с ботом'
         ),
         BotCommand(
+            command='docs_list',
+            description='список загруженных документов'
+        ),
+        BotCommand(
             command='clean',
             description='очистить историю документов'
         ),
