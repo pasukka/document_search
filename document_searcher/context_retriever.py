@@ -30,8 +30,8 @@ class ContextRetriever:
         db_dir = self.documents_path
         if os.path.exists(db_dir+'index.faiss') and load_from_db:
             # loading needs allow_dangerous_deserialization
-            self.db = FAISS.load_local(db_dir, 
-                                       self.documents_embeddings, 
+            self.db = FAISS.load_local(db_dir,
+                                       self.documents_embeddings,
                                        allow_dangerous_deserialization=True)
         else:
             documents = self.load_documents()
