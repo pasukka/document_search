@@ -7,6 +7,9 @@ from document_searcher.document_searcher import DocumentSearcher
 
 MAX_RETRIES = 2
 
+#TODO: strange answers (adds "user"; does not answer if thanks)
+
+#TODO: delete one file from list
 
 class DocumentSearcherController:
 
@@ -17,7 +20,7 @@ class DocumentSearcherController:
         self.log_path = "user_errors.log"
         with open('metadata/metadata.json', 'r', encoding='utf-8') as file:
             self.metadata = json.load(file)
-        self.clean_all_user_dirs()
+        # self.clean_all_user_dirs()
 
     def get_error_message(self) -> str:
         error = self.doc_searcher.error_code
@@ -58,14 +61,24 @@ class DocumentSearcherController:
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         return user_dir_path
+    
+    def get_docs_list(self, chat_id):
+        user_dir_path = self.get_user_dir(chat_id)
+        filelist = []
+        if os.path.exists(user_dir_path):
+            filelist = [f for f in os.listdir(user_dir_path) if f.split('.')[1] == 'txt']
+        return filelist
 
     def clean_all_user_dirs(self):
         dirlist = [f for f in os.listdir(self.docs_path)
                    if f.startswith('chat_')]
         for dir in dirlist:
-            self.clean_user_dir(self.docs_path+dir)
+            self.clean_user_dir(user_dir=self.docs_path+dir)
 
-    def clean_user_dir(self, user_dir):
+    def clean_user_dir(self, chat_id=None, user_dir=None):
+        if user_dir == None:
+            user_dir = self.get_user_dir(chat_id)
+            self.doc_searcher.restart()
         if os.path.exists(user_dir):
             filelist = [f for f in os.listdir(user_dir)]
             try:
