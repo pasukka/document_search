@@ -52,7 +52,8 @@ class ContextRetriever:
 
     def load_documents(self):
         list_of_documents = [f for f in listdir(self.documents_path)
-                             if isfile(join(self.documents_path, f))]
+                             if isfile(join(self.documents_path, f)) and f.split('.')[1] == 'txt']
+        
         documents = []
         for i in range(len(list_of_documents)):
             with open(self.documents_path + list_of_documents[i], 'r', encoding='utf-8') as file:
