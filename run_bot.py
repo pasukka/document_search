@@ -4,8 +4,8 @@ import os
 from dotenv import load_dotenv
 
 from aiogram import Bot, Dispatcher
-from chatbot.bot import router
-from chatbot.commands import set_commands
+from bot.bot import router
+from bot.commands import set_commands
 
 async def start():
     load_dotenv()
