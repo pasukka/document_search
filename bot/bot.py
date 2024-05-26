@@ -11,7 +11,7 @@ from bot.states import CallBackForm, DeleteFilesForm
 from bot.keyboards import reply_keyboard, cancel_inline_keyboard
 from bot.search_manager import DocumentSearcherManager
 
-CHECKED = '✓'
+CHECKED = '✅'
 
 router = Router()
 ds_controller = DocumentSearcherManager()
@@ -25,22 +25,30 @@ async def cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
+async def remove_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    message = dialog_manager.event.message
+    await message.answer(ds_controller.metadata["response"]["deleting_file_response"],
+                         parse_mode='Markdown')
+    files = dialog_manager.dialog_data["files_list"]
+    chat_id = message.chat.id
+    ds_controller.remove_chosen_files(chat_id, files)
+    await message.answer(ds_controller.metadata["info"]["clean_info"],
+                         parse_mode='Markdown')
+    await dialog_manager.done()
+
+
 @router.message(Command("help"))
 async def handle_help(message: types.Message):
     await message.answer(ds_controller.metadata["info"]["help_info"].replace("_", "\\_"), parse_mode='Markdown')
 
 
-async def delete_files(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
+async def delete_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
     message = dialog_manager.event.message
-    await message.answer(ds_controller.metadata["info"]["deleting_file_response"],
-                         parse_mode='Markdown')
-    chat_id = message.chat.id
     buttons = message.reply_markup.inline_keyboard
     files = [row[0].text.replace(CHECKED, '').replace(' ', '')
              for row in buttons if row[0].text.startswith(CHECKED)]
-    ds_controller.remove_chosen_files(chat_id, files)
-    await message.answer(ds_controller.metadata["info"]["clean_info"],
-                         parse_mode='Markdown')
+    dialog_manager.dialog_data["files_list"] = files
+    await dialog_manager.switch_to(DeleteFilesForm.remove)
 
 
 async def get_data(**kwargs):
@@ -54,6 +62,10 @@ async def get_data(**kwargs):
         "files": files,
         "count": len(files),
     }
+
+
+async def go_back(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    await dialog_manager.back()
 
 
 @router.message(Command("docs_list"))
@@ -74,9 +86,9 @@ async def handle_start(message: types.Message):
 
 @router.message(Command("clean"))
 async def handle_clean(message: types.Message):
-    await message.answer(ds_controller.metadata["info"]["deleting_file_response"],
+    await message.answer(ds_controller.metadata["response"]["deleting_file_response"],
                          parse_mode='Markdown')
-    ds_controller.clean_user_dir(chat_id=message.chat.id)
+    ds_controller.clean_user_dir(message.chat.id)
     await message.answer(ds_controller.metadata["info"]["clean_info"],
                          parse_mode='Markdown')
 
