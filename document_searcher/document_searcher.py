@@ -13,6 +13,8 @@ USER = "user"
 ASSISTANT = "assistant"
 # TODO: tests
 
+# TODO: strange answers (adds "user"; does not answer if thanks or adds more unnecessary info)
+
 
 class DocumentSearcher:
     hf_token: str
@@ -97,6 +99,8 @@ class DocumentSearcher:
         self.chat_history = []
         self.docs_path = self.config.docs_path
 
-    def change_docs_path(self, new_docs_path):
+    def change_docs_path(self, new_docs_path=''):
+        if new_docs_path == '':
+            new_docs_path = self.config.docs_path
         self.context_retriever = ContextRetriever(
             new_docs_path, load_from_db=False)
