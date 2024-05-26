@@ -38,7 +38,7 @@ async def delete_files(c: CallbackQuery, button: Button, dialog_manager: DialogM
     buttons = message.reply_markup.inline_keyboard
     files = [row[0].text.replace(CHECKED, '').replace(' ', '')
              for row in buttons if row[0].text.startswith(CHECKED)]
-    ds_controller.remove_files(chat_id, files)
+    ds_controller.remove_chosen_files(chat_id, files)
     await message.answer(ds_controller.metadata["info"]["clean_info"],
                          parse_mode='Markdown')
 
