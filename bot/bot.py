@@ -42,13 +42,13 @@ async def handle_help(message: types.Message):
     await message.answer(ds_controller.metadata["info"]["help_info"].replace("_", "\\_"), parse_mode='Markdown')
 
 
-async def delete_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
+async def list_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
     message = dialog_manager.event.message
     buttons = message.reply_markup.inline_keyboard
     files = [row[0].text.replace(CHECKED, '').replace(' ', '')
              for row in buttons if row[0].text.startswith(CHECKED)]
     dialog_manager.dialog_data["files_list"] = files
-    await dialog_manager.switch_to(DeleteFilesForm.remove)
+    await dialog_manager.switch_to(DeleteFilesForm.remove_files)
 
 
 async def get_data(**kwargs):
@@ -73,7 +73,7 @@ async def handle_docs_list(message: types.Message, dialog_manager: DialogManager
     docs_list = ds_controller.get_docs_list(message.chat.id)
     await message.answer(f"Количество файлов: *{len(docs_list)}*",
                          parse_mode='Markdown')
-    await dialog_manager.start(DeleteFilesForm.file_delete, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(DeleteFilesForm.list_files, mode=StartMode.RESET_STACK)
 
 
 @router.message(Command("start"))
