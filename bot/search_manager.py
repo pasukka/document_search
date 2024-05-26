@@ -2,12 +2,11 @@ import os
 import json
 import time
 import datetime
+import shutil
 
 from document_searcher.document_searcher import DocumentSearcher
 
 MAX_RETRIES = 2
-
-# TODO: strange answers (adds "user"; does not answer if thanks)
 
 
 class DocumentSearcherManager:
@@ -47,9 +46,7 @@ class DocumentSearcherManager:
         return self.docs_path + 'chat_' + str(chat_id) + '/'
 
     def restart(self, chat_id):
-        user_dir_path = self.get_user_dir(chat_id)
-        self.clean_user_dir(user_dir_path)
-        self.doc_searcher.restart()
+        self.clean_user_dir(chat_id)
 
     def change_docs_path(self, chat_id):
         user_dir_path = self.get_user_dir(chat_id)
@@ -75,29 +72,26 @@ class DocumentSearcherManager:
         for dir in dirlist:
             self.clean_user_dir(user_dir=self.docs_path+dir)
 
-    def clean_user_dir(self, chat_id=None, user_dir=None):
-        if user_dir == None:
+    def clean_user_dir(self, chat_id=None, user_dir=''):
+        if chat_id:
             user_dir = self.get_user_dir(chat_id)
-            self.doc_searcher.restart()
         if os.path.exists(user_dir):
-            filelist = [f for f in os.listdir(user_dir)]
-            self.remove_files(user_dir, filelist)
+           shutil.rmtree(user_dir)
+        self.doc_searcher.restart()
+        self.doc_searcher.change_docs_path()
 
-    def remove_chosen_files(self, chat_id: int, files: list):
+    def remove_chosen_files(self, chat_id: int, filelist: list):
         user_dir = self.get_user_dir(chat_id)
-        self.remove_files(user_dir, files)
-
-    def remove_files(self, user_dir: str, filelist: list):
         try:
             for f in filelist:
                 os.remove(os.path.join(user_dir, f))
             new_path = user_dir
             filelist = [f for f in os.listdir(user_dir)
                         if f.split('.')[1] == 'txt']
-            if len(filelist) == 0:
+            if len(filelist) == 0: 
                 self.doc_searcher.restart()
                 new_path = self.doc_searcher.docs_path
-                os.rmdir(user_dir)
+                shutil.rmtree(user_dir)
             self.doc_searcher.change_docs_path(new_path)
         except Exception:
             pass
