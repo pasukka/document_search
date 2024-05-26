@@ -81,25 +81,26 @@ class DocumentSearcherManager:
             self.doc_searcher.restart()
         if os.path.exists(user_dir):
             filelist = [f for f in os.listdir(user_dir)]
-            try:
-                for f in filelist:
-                    os.remove(os.path.join(user_dir, f))
-                os.rmdir(user_dir)
-            except Exception:
-                pass
+            self.remove_files(user_dir, filelist)
 
-    def remove_files(self, chat_id: int, files: list):
+    def remove_chosen_files(self, chat_id: int, files: list):
         user_dir = self.get_user_dir(chat_id)
-        for file_name in files:
-            os.remove(os.path.join(user_dir, file_name))
-        new_path = user_dir
-        filelist = [f for f in os.listdir(user_dir)
-                    if f.split('.')[1] == 'txt']
-        if len(filelist) == 0:
-            self.doc_searcher.restart()
-            new_path = self.doc_searcher.docs_path
-            self.clean_user_dir(user_dir=user_dir)
-        self.doc_searcher.change_docs_path(new_path)
+        self.remove_files(user_dir, files)
+
+    def remove_files(self, user_dir: str, filelist: list):
+        try:
+            for f in filelist:
+                os.remove(os.path.join(user_dir, f))
+            new_path = user_dir
+            filelist = [f for f in os.listdir(user_dir)
+                        if f.split('.')[1] == 'txt']
+            if len(filelist) == 0:
+                self.doc_searcher.restart()
+                new_path = self.doc_searcher.docs_path
+                os.rmdir(user_dir)
+            self.doc_searcher.change_docs_path(new_path)
+        except Exception:
+            pass
 
     def callback(self, message):
         t = datetime.datetime.now()
