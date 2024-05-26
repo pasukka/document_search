@@ -2,4 +2,3 @@
 .vscode/
 Pipfile.lock
 documents/
-database/
