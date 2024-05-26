@@ -7,9 +7,8 @@ from document_searcher.document_searcher import DocumentSearcher
 
 MAX_RETRIES = 2
 
-#TODO: strange answers (adds "user"; does not answer if thanks)
+# TODO: strange answers (adds "user"; does not answer if thanks)
 
-#TODO: delete one file from list
 
 class DocumentSearcherManager:
 
@@ -61,12 +60,13 @@ class DocumentSearcherManager:
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         return user_dir_path
-    
+
     def get_docs_list(self, chat_id):
         user_dir_path = self.get_user_dir(chat_id)
         filelist = []
         if os.path.exists(user_dir_path):
-            filelist = [f for f in os.listdir(user_dir_path) if f.split('.')[1] == 'txt']
+            filelist = [f for f in os.listdir(
+                user_dir_path) if f.split('.')[1] == 'txt']
         return filelist
 
     def clean_all_user_dirs(self):
@@ -87,6 +87,19 @@ class DocumentSearcherManager:
                 os.rmdir(user_dir)
             except Exception:
                 pass
+
+    def remove_files(self, chat_id: int, files: list):
+        user_dir = self.get_user_dir(chat_id)
+        for file_name in files:
+            os.remove(os.path.join(user_dir, file_name))
+        new_path = user_dir
+        filelist = [f for f in os.listdir(user_dir)
+                    if f.split('.')[1] == 'txt']
+        if len(filelist) == 0:
+            self.doc_searcher.restart()
+            new_path = self.doc_searcher.docs_path
+            self.clean_user_dir(user_dir=user_dir)
+        self.doc_searcher.change_docs_path(new_path)
 
     def callback(self, message):
         t = datetime.datetime.now()
