@@ -4,7 +4,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Multiselect, Column
 
 from bot.states import DeleteFilesForm
-from bot.bot import delete_files, CHECKED
+from bot.bot import get_data, go_back, delete_files, remove_files, CHECKED
 
 
 file_list_window = Window(
@@ -16,8 +16,14 @@ file_list_window = Window(
         item_id_getter=operator.itemgetter(1),
         items="files",
     )),
-    Button(Const("Удалить выбранные файлы"), "b2", on_click=delete_files),
-    state=DeleteFilesForm.file_delete
+    Button(Const("Удалить выбранные файлы 🗑️"), "b1", on_click=delete_files),
+    state=DeleteFilesForm.file_delete,
+    getter=get_data
 )
 
-# TODO: make second window for "do you really want?" back|yes
+remove_files_window = Window(
+    Const("Вы действительно хотите удалить выбранные файлы❓"),
+    Button(Const("Да"), "b2", on_click=remove_files),
+    Button(Const("Нет"), "b3", on_click=go_back),
+    state=DeleteFilesForm.remove,
+)
