@@ -7,3 +7,4 @@ class CallBackForm(StatesGroup):
 
 class DeleteFilesForm(StatesGroup):
     file_delete = State()
+    remove = State()
