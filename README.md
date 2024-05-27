@@ -20,7 +20,7 @@ Project installation:
 pipenv install
 ```
 
-For searching document using console program use:
+Document search:
 ```
-pipenv run python run_prediction.py
+pipenv run python run_search.py
 ```
