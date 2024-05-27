@@ -14,6 +14,6 @@ def test_check_intent():
     chat_history = 'smth'
     cr(query, chat_history)
 
-# TODO: Check intent (may be distance btw needed and received)
+# TODO: Check intent (maybe distance btw needed and received)
 
-# TODO: strange answers (adds "user"; does not answer if thanks or adds more unnecessary info)
+# TODO: strange answers (adds "user")
