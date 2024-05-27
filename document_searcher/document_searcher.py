@@ -11,25 +11,22 @@ from document_searcher.config import load_config
 
 USER = "user"
 ASSISTANT = "assistant"
-# TODO: tests
-
-# TODO: strange answers (adds "user"; does not answer if thanks or adds more unnecessary info)
 
 
 class DocumentSearcher:
-    hf_token: str
+    _hf_token: str
 
     def __init__(self):
         load_dotenv()
         self.chat_history = []
-        self.hf_token = os.getenv('HUGGINGFACE_TOKEN')
+        self._hf_token = os.getenv('HUGGINGFACE_TOKEN')
         self.config = load_config('config.yml')
         self.model = self.config.llm
         self.docs_path = self.config.docs_path
         self.log_messages = self.config.log_messages
         self.llm = InferenceClient(model=self.model,
                                    timeout=100,
-                                   token=self.hf_token)
+                                   token=self._hf_token)
         self.intent_summarizer = IntentSummarizer()
         self.context_retriever = ContextRetriever(self.docs_path)
         self.error_code = 0
@@ -102,5 +99,5 @@ class DocumentSearcher:
     def change_docs_path(self, new_docs_path=''):
         if new_docs_path == '':
             new_docs_path = self.config.docs_path
-        self.context_retriever = ContextRetriever(
-            new_docs_path, load_from_db=False)
+        self.docs_path = new_docs_path
+        self.context_retriever.reload_db(new_docs_path)
