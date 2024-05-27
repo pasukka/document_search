@@ -12,56 +12,62 @@ class ContextRetriever:
     model: str
     documents_path: str
 
-    def __init__(self, documents_path, load_from_db=True):
+    def __init__(self, documents_path):
         self.model = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
         self.documents_path = documents_path
         self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
                                                              task="feature-extraction",
                                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
-        self.load_data_base(load_from_db)
+        self.__load_data_base()
 
     def __call__(self, user_intent: str) -> list[str]:
-        relevant_documents = self.find_relevant_documents(user_intent)
+        relevant_documents = self.__find_relevant_documents(user_intent)
         documents_context_list = [
             doc.page_content for doc in relevant_documents]
         return documents_context_list
 
-    def load_data_base(self, load_from_db=True):
+    def __load_data_base(self):
         db_dir = self.documents_path
-        if os.path.exists(db_dir+'index.faiss') and load_from_db:
+        if not os.path.exists(db_dir):
+            raise FileNotFoundError('Директории не существует')
+        if os.path.exists(db_dir+'index.faiss'):
             # loading needs allow_dangerous_deserialization
             self.db = FAISS.load_local(db_dir,
-                                       self.documents_embeddings,
-                                       allow_dangerous_deserialization=True)
+                                    self.documents_embeddings,
+                                    allow_dangerous_deserialization=True)
         else:
-            documents = self.load_documents()
-            df = pd.DataFrame(documents)
-            loader = DataFrameLoader(df, page_content_column='text')
-            loaded_documents = loader.load()
+            self.reload_db(db_dir)
 
-            # splitting instead of summarization for having all info
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
-                                                           chunk_overlap=0)
-            splitted_documents = text_splitter.split_documents(
-                loaded_documents)
 
-            self.db = FAISS.from_documents(splitted_documents,
-                                           self.documents_embeddings)
-            # [Document(page_content='text', metadata={id:1})]
-            self.db.save_local(db_dir)
+    def reload_db(self, path):
+        self.documents_path = path
+        documents = self.__load_documents(path)
+        df = pd.DataFrame(documents)
+        loader = DataFrameLoader(df, page_content_column='text')
+        loaded_documents = loader.load()
 
-    def load_documents(self):
-        list_of_documents = [f for f in listdir(self.documents_path)
-                             if isfile(join(self.documents_path, f)) and f.split('.')[1] == 'txt']
+        # splitting instead of summarization for having all info
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
+                                                       chunk_overlap=0)
+        splitted_documents = text_splitter.split_documents(
+            loaded_documents)
         
+        # [Document(page_content='text', metadata={id:1})]
+        self.db = FAISS.from_documents(splitted_documents,
+                                       self.documents_embeddings)
+        self.db.save_local(path)
+
+    def __load_documents(self, path):
+        list_of_documents = [f for f in listdir(path)
+                             if isfile(join(path, f)) and f.split('.')[1] == 'txt']
         documents = []
         for i in range(len(list_of_documents)):
-            with open(self.documents_path + list_of_documents[i], 'r', encoding='utf-8') as file:
+            with open(path + list_of_documents[i], 'r', encoding='utf-8') as file:
                 text = file.read()
                 documents.append({"id": i, "text": text})
         return documents
 
-    def find_relevant_documents(self, query: str):
+    def __find_relevant_documents(self, query: str):
         embedding_vector = self.documents_embeddings.embed_query(query)
         relevant_docs = self.db.similarity_search_by_vector(embedding_vector)
         return relevant_docs
