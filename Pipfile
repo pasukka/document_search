@@ -14,6 +14,8 @@ aiogram = "*"
 torch = "*"
 transformers = "*"
 aiogram-dialog = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [dev-packages]
 
