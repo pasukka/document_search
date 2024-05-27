@@ -28,7 +28,7 @@ def test_error_reload_db():
     documents_path = "documents/test/"
     with pytest.raises(FileNotFoundError):
         cr = ContextRetriever(documents_path)
-        assert cr.documents_path == documents_path
+        assert cr.documents_path != documents_path
 
 # TODO: add test for many docs
 
