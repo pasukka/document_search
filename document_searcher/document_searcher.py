@@ -7,6 +7,7 @@ from huggingface_hub import InferenceClient
 
 from document_searcher.intent_summarizer import IntentSummarizer
 from document_searcher.context_retriever import ContextRetriever
+from document_searcher.errors import TokenError, TimeError, FileError
 from document_searcher.config import load_config
 
 USER = "user"
@@ -83,21 +84,22 @@ class DocumentSearcher:
             self.chat_history.append(assistant_message)
         except requests.exceptions.ReadTimeout or ReadTimeoutError or urllib3.exceptions.ReadTimeoutError or TimeoutError as e:
             self.error_code = 1
-            print(self.error_code, e)
+            raise TimeError() from e
         except ValueError as e:
             self.error_code = 2
-            print(self.error_code, e)
-        except Exception as e:
-            self.error_code = 3
-            print(self.error_code, e)
+            raise TokenError() from e
         return response
 
-    def restart(self):
+    def restart(self) -> None:
         self.chat_history = []
         self.docs_path = self.config.docs_path
 
-    def change_docs_path(self, new_docs_path=''):
-        if new_docs_path == '':
+    def change_docs_path(self, new_docs_path="") -> None:
+        if new_docs_path == "":
             new_docs_path = self.config.docs_path
-        self.docs_path = new_docs_path
-        self.context_retriever.reload_db(new_docs_path)
+        try:
+            self.context_retriever.reload_db(new_docs_path)
+            self.docs_path = new_docs_path
+        except FileNotFoundError or PermissionError as e:
+            self.error_code = 3
+            raise FileError() from e
