@@ -1,5 +1,5 @@
-from document_searcher.document_searcher import DocumentSearcher
-
+import pytest
+from document_searcher.document_searcher import DocumentSearcher, FileError
 
 def test_start_ds():
     ds = DocumentSearcher()
@@ -26,8 +26,14 @@ def test_change_docs_path():
     assert ds.docs_path == docs_path
     assert ds.context_retriever.documents_path == docs_path
 
+def test_error_change_docs_path():
+    ds = DocumentSearcher()
+    docs_path = 'documents/test/'
+    with pytest.raises(FileError):
+        ds.change_docs_path(docs_path)
+    assert ds.docs_path != docs_path
+    assert ds.context_retriever.documents_path != docs_path
 
-# TODO: ask: all exceptions, error_code
 
 # TODO: Check model answer
 
