@@ -24,3 +24,8 @@ Document search:
 ```
 pipenv run python run_search.py
 ```
+
+Tests running:
+```
+pipenv run python -m pytest
+```
