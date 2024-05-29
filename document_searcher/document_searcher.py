@@ -98,7 +98,7 @@ class DocumentSearcher:
         if new_docs_path == "":
             new_docs_path = self.config.docs_path
         try:
-            self.context_retriever.reload_db(new_docs_path)
+            self.context_retriever.load_data_base(new_docs_path)
             self.docs_path = new_docs_path
         except FileNotFoundError or PermissionError as e:
             self.error_code = 3
