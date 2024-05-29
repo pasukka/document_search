@@ -95,7 +95,7 @@ async def handle_clean(message: types.Message):
 
 @router.message(StateFilter(CallBackForm.GET_CALLBACK))
 async def write_callback(message: types.Message, state: FSMContext):
-    ds_controller.callback(message.text)
+    ds_controller.callback(message.chat.id, message.text)
     await message.answer(ds_controller.metadata["response"]["callback_response"])
     await state.clear()
 
