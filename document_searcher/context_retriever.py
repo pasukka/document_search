@@ -18,7 +18,7 @@ class ContextRetriever:
         self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
                                                              task="feature-extraction",
                                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
-        self.__load_data_base()
+        self.load_data_base(self.documents_path)
 
     def __call__(self, user_intent: str) -> list[str]:
         relevant_documents = self.__find_relevant_documents(user_intent)
@@ -26,35 +26,35 @@ class ContextRetriever:
             doc.page_content for doc in relevant_documents]
         return documents_context_list
 
-    def __load_data_base(self) -> None:
-        db_dir = self.documents_path
-        if not os.path.exists(db_dir):
+    def load_data_base(self, path: str) -> None:
+        if not os.path.exists(path):
             raise FileNotFoundError('Директории не существует')
-        if os.path.exists(db_dir+'index.faiss'):
+        self.documents_path = path
+        if os.path.exists(path+'index.faiss'):
             # loading needs allow_dangerous_deserialization
-            self.db = FAISS.load_local(db_dir,
+            self.db = FAISS.load_local(path,
                                        self.documents_embeddings,
                                        allow_dangerous_deserialization=True)
         else:
-            self.reload_db(db_dir)
+            self.reload_db()
 
-    def reload_db(self, path: str) -> None:
-        documents = self.__load_documents(path)
-        self.documents_path = path
-        df = pd.DataFrame(documents)
-        loader = DataFrameLoader(df, page_content_column='text')
-        loaded_documents = loader.load()
+    def reload_db(self) -> None:
+        documents = self.__load_documents(self.documents_path)
+        if documents:
+            df = pd.DataFrame(documents)
+            loader = DataFrameLoader(df, page_content_column='text')
+            loaded_documents = loader.load()
 
-        # splitting instead of summarization for having all info
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
-                                                       chunk_overlap=0)
-        splitted_documents = text_splitter.split_documents(
-            loaded_documents)
+            # splitting instead of summarization for having all info
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
+                                                            chunk_overlap=0)
+            splitted_documents = text_splitter.split_documents(
+                loaded_documents)
 
-        # [Document(page_content='text', metadata={id:1})]
-        self.db = FAISS.from_documents(splitted_documents,
-                                       self.documents_embeddings)
-        self.db.save_local(path)
+            # [Document(page_content='text', metadata={id:1})]
+            self.db = FAISS.from_documents(splitted_documents,
+                                            self.documents_embeddings)
+            self.db.save_local(self.documents_path)
 
     def __load_documents(self, path: str) -> list[dict]:
         list_of_documents = [f for f in listdir(path)
@@ -63,7 +63,8 @@ class ContextRetriever:
         for i in range(len(list_of_documents)):
             with open(path + list_of_documents[i], 'r', encoding='utf-8') as file:
                 text = file.read()
-                documents.append({"id": i, "text": text})
+                if text:
+                    documents.append({"id": i, "text": text})
         return documents
 
     def __find_relevant_documents(self, query: str) -> list:
