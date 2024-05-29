@@ -29,3 +29,7 @@ Tests running:
 ```
 pipenv run python -m pytest
 ```
+
+```
+pipenv run python -m pytest --cov=proj_name --cov-report html:cov_html
+```
