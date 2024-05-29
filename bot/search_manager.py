@@ -54,7 +54,6 @@ class DocumentSearcherManager:
     def change_docs_path(self, chat_id: int) -> None:
         user_dir_path = self._get_user_dir(chat_id)
         self.doc_searcher.change_docs_path(user_dir_path)
-        self.docs_path = self.doc_searcher.docs_path
 
     def get_path(self, chat_id: int) -> str:
         user_dir_path = self._get_user_dir(chat_id)
@@ -100,7 +99,7 @@ class DocumentSearcherManager:
         except Exception:
             pass
 
-    def callback(self, message: str) -> None:
+    def callback(self, chat_id: str, message: str) -> None:
         t = datetime.datetime.now()
         with open(self.log_path, 'a+', encoding='utf-8') as f:
-            f.write(f'Time:{t}\nMessage:{message}\n\n')
+            f.write(f'Time:{t}\nChat_id:{chat_id}\nMessage:{message}\n\n')
