@@ -45,24 +45,25 @@ class DocumentSearcherManager:
         self.retries = 0
         return answer
 
-    def get_user_dir(self, chat_id: int) -> str:
+    def _get_user_dir(self, chat_id: int) -> str:
         return self.docs_path + 'chat_' + str(chat_id) + '/'
 
     def restart(self, chat_id: int) -> None:
         self.clean_user_dir(chat_id)
 
     def change_docs_path(self, chat_id: int) -> None:
-        user_dir_path = self.get_user_dir(chat_id)
+        user_dir_path = self._get_user_dir(chat_id)
         self.doc_searcher.change_docs_path(user_dir_path)
+        self.docs_path = self.doc_searcher.docs_path
 
     def get_path(self, chat_id: int) -> str:
-        user_dir_path = self.get_user_dir(chat_id)
+        user_dir_path = self._get_user_dir(chat_id)
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         return user_dir_path
 
     def get_docs_list(self, chat_id: int) -> list[str]:
-        user_dir_path = self.get_user_dir(chat_id)
+        user_dir_path = self._get_user_dir(chat_id)
         filelist = []
         if os.path.exists(user_dir_path):
             filelist = [f for f in os.listdir(
@@ -76,15 +77,15 @@ class DocumentSearcherManager:
             self.clean_user_dir(user_dir=self.docs_path+dir)
 
     def clean_user_dir(self, chat_id=None, user_dir='') -> None:
-        if chat_id:
-            user_dir = self.get_user_dir(chat_id)
+        if chat_id != None:
+            user_dir = self._get_user_dir(chat_id)
         if os.path.exists(user_dir):
             shutil.rmtree(user_dir)
         self.doc_searcher.restart()
         self.doc_searcher.change_docs_path()
 
     def remove_chosen_files(self, chat_id: int, filelist: list) -> None:
-        user_dir = self.get_user_dir(chat_id)
+        user_dir = self._get_user_dir(chat_id)
         try:
             for f in filelist:
                 os.remove(os.path.join(user_dir, f))
