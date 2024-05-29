@@ -17,7 +17,7 @@ def test_error_start_cr():
 
 
 def test_reload_db():
-    documents_path = "documents/test_dir/"
+    documents_path = "documents/chat_1/"
     cr = ContextRetriever(documents_path)
     assert len(cr.db.docstore._dict) == 2
     assert cr.documents_path == documents_path
