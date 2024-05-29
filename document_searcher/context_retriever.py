@@ -47,13 +47,13 @@ class ContextRetriever:
 
             # splitting instead of summarization for having all info
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
-                                                            chunk_overlap=0)
+                                                           chunk_overlap=0)
             splitted_documents = text_splitter.split_documents(
                 loaded_documents)
 
             # [Document(page_content='text', metadata={id:1})]
             self.db = FAISS.from_documents(splitted_documents,
-                                            self.documents_embeddings)
+                                           self.documents_embeddings)
             self.db.save_local(self.documents_path)
 
     def __load_documents(self, path: str) -> list[dict]:
