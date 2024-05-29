@@ -1,6 +1,7 @@
 import pytest
 from document_searcher.document_searcher import DocumentSearcher, FileError
 
+
 def test_start_ds():
     ds = DocumentSearcher()
     with open("./prompts/find_answer.txt", 'r', encoding='utf-8') as file:
@@ -10,7 +11,7 @@ def test_start_ds():
 
 def test_restart():
     ds = DocumentSearcher()
-    docs_path = 'documents/test_dir/'
+    docs_path = 'documents/chat_0/'
     chat_history = 'something'
     ds.docs_path = docs_path
     ds.chat_history = chat_history
@@ -21,14 +22,15 @@ def test_restart():
 
 def test_change_docs_path():
     ds = DocumentSearcher()
-    docs_path = 'documents/test_dir/'
+    docs_path = 'documents/chat_1/'
     ds.change_docs_path(docs_path)
     assert ds.docs_path == docs_path
     assert ds.context_retriever.documents_path == docs_path
 
+
 def test_error_change_docs_path():
     ds = DocumentSearcher()
-    docs_path = 'documents/test/'
+    docs_path = 'documents/chat/'
     with pytest.raises(FileError):
         ds.change_docs_path(docs_path)
     assert ds.docs_path != docs_path
