@@ -36,7 +36,7 @@ def test_change_docs_path():
     id = 0
     sm.change_docs_path(id)
     path = './documents/chat_0/'
-    assert sm.docs_path == path
+    assert sm.doc_searcher.docs_path == path
 
 
 def test_get_docs_list():
