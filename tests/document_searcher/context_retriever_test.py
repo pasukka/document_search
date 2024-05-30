@@ -30,6 +30,4 @@ def test_error_reload_db():
         cr = ContextRetriever(documents_path)
         assert cr.documents_path != documents_path
 
-# TODO: add test for many docs
-
 # TODO check context
