@@ -7,6 +7,7 @@ import shutil
 import document_searcher
 from document_searcher.document_searcher import DocumentSearcher
 from loggers.loggers import BotLogger, CallbackLogger, ManagerLogger
+from database.database import get_files_path
 
 MAX_RETRIES = 2
 
@@ -23,7 +24,7 @@ class DocumentSearcherManager:
         self.log_path = "logs/user_errors.log"
         with open('metadata/metadata.json', 'r', encoding='utf-8') as file:
             self.metadata = json.load(file)
-        # self.clean_all_user_dirs()
+        # await self.clean_all_user_dirs()
 
     def get_error_message(self, error: Exception, id: int) -> str:
         error_str = ""
@@ -61,28 +62,32 @@ class DocumentSearcherManager:
         self.manager_logger.logger.info(f"Chat: {id} - Got answer from LLM.")
         return answer
 
-    def _get_user_dir(self, chat_id: int) -> str:
+    def make_user_dir(self, chat_id: int) -> str:
         return self.docs_path + 'chat_' + str(chat_id) + '/'
+        
+    async def get_user_dir(self, chat_id: int) -> str:
+        path = (await get_files_path(chat_id))[0]
+        return path
 
-    def restart(self, chat_id: int) -> None:
-        self.clean_user_dir(chat_id)
+    async def restart(self, chat_id: int) -> None:
+        await self.clean_user_dir(chat_id)
 
-    def change_docs_path(self, chat_id: int) -> None:
-        user_dir_path = self._get_user_dir(chat_id)
+    async def change_docs_path(self, chat_id: int) -> None:
+        user_dir_path = await self.get_user_dir(chat_id)
         self.doc_searcher.change_docs_path(user_dir_path)
         self.manager_logger.logger.info(
             f"Chat: {chat_id} - Changed documents path.")
 
-    def get_path(self, chat_id: int) -> str:
-        user_dir_path = self._get_user_dir(chat_id)
+    async def get_path(self, chat_id: int) -> str:
+        user_dir_path = await self.get_user_dir(chat_id)
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         self.manager_logger.logger.info(
             f"Chat: {chat_id} - Got user directory path.")
         return user_dir_path
 
-    def get_docs_list(self, chat_id: int) -> list[str]:
-        user_dir_path = self._get_user_dir(chat_id)
+    async def get_docs_list(self, chat_id: int) -> list[str]:
+        user_dir_path = await self.get_user_dir(chat_id)
         filelist = []
         if os.path.exists(user_dir_path):
             filelist = [f for f in os.listdir(
@@ -91,16 +96,16 @@ class DocumentSearcherManager:
             f"Chat: {chat_id} - Got documents list.")
         return filelist
 
-    def clean_all_user_dirs(self) -> None:
+    async def clean_all_user_dirs(self) -> None:
         dirlist = [f for f in os.listdir(self.docs_path)
                    if f.startswith('chat_')]
         self.manager_logger.logger.info(f"Starting cleaning all directories.")
         for dir in dirlist:
-            self.clean_user_dir(user_dir=self.docs_path+dir)
+            await self.clean_user_dir(user_dir=self.docs_path+dir)
 
-    def clean_user_dir(self, chat_id=None, user_dir='') -> str:
+    async def clean_user_dir(self, chat_id=None, user_dir="") -> str:
         if chat_id != None:
-            user_dir = self._get_user_dir(chat_id)
+            user_dir = await self.get_user_dir(chat_id)
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Got user directory: {user_dir}.")
         if os.path.exists(user_dir):
@@ -113,8 +118,8 @@ class DocumentSearcherManager:
             f"Chat: {chat_id} - Restarting and cleaning user directory.")
         return user_dir
 
-    def remove_chosen_files(self, chat_id: int, filelist: list) -> str:
-        user_dir = self._get_user_dir(chat_id)
+    async def remove_chosen_files(self, chat_id: int, filelist: list) -> str:
+        user_dir = await self.get_user_dir(chat_id)
         try:
             for f in filelist:
                 os.remove(os.path.join(user_dir, f))

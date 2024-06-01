@@ -10,7 +10,7 @@ from aiogram_dialog.widgets.kbd import Button
 from bot.states import CallBackForm, DeleteFilesForm
 from bot.keyboards import reply_keyboard, cancel_inline_keyboard
 from bot.search_manager import DocumentSearcherManager
-
+from database.database import create_chat
 
 CHECKED = '✅'
 
@@ -35,7 +35,7 @@ async def remove_files(call: CallbackQuery, button: Button, dialog_manager: Dial
                          parse_mode='Markdown')
     files = dialog_manager.dialog_data["files_list"]
     chat_id = message.chat.id
-    user_dir = ds_controller.remove_chosen_files(chat_id, files)
+    user_dir = await ds_controller.remove_chosen_files(chat_id, files)
     bot_logger.logger.info(
         f"Chat: {message.chat.id} - Removed files from folder {user_dir}.")
     await message.answer(ds_controller.metadata["info"]["clean_info"],
@@ -62,7 +62,7 @@ async def list_files(call: CallbackQuery, button: Button, dialog_manager: Dialog
 
 async def get_data(**kwargs):
     id = kwargs['event_context'].chat.id
-    docs_list = ds_controller.get_docs_list(id)
+    docs_list = await ds_controller.get_docs_list(id)
     bot_logger.logger.info(f"Chat: {id} - Showing files list.")
     id = 1
     files = []
@@ -85,7 +85,7 @@ async def go_back(call: CallbackQuery, button: Button, dialog_manager: DialogMan
 async def handle_docs_list(message: types.Message, dialog_manager: DialogManager):
     bot_logger.logger.info(
         f"Chat: {message.chat.id} - Making dialog for showing files list.")
-    docs_list = ds_controller.get_docs_list(message.chat.id)
+    docs_list = await ds_controller.get_docs_list(message.chat.id)
     await message.answer(f"Количество файлов: *{len(docs_list)}*",
                          parse_mode='Markdown')
     await dialog_manager.start(DeleteFilesForm.list_files, mode=StartMode.RESET_STACK)
@@ -93,18 +93,21 @@ async def handle_docs_list(message: types.Message, dialog_manager: DialogManager
 
 @router.message(Command("start"))
 async def handle_start(message: types.Message):
-    bot_logger.logger.info(f"Chat: {message.chat.id} - Started bot.")
+    id = message.chat.id
+    bot_logger.logger.info(f"Chat: {id} - Started bot.")
     await message.answer(ds_controller.metadata["info"]["start_info"],
                          parse_mode='Markdown',
                          reply_markup=reply_keyboard)
-    ds_controller.restart(message.chat.id)
+    await ds_controller.restart(id)
+    user_dir_path = ds_controller.make_user_dir(id)
+    await create_chat(id, message.chat.type, user_dir_path)
 
 
 @router.message(Command("clean"))
 async def handle_clean(message: types.Message):
     await message.answer(ds_controller.metadata["response"]["deleting_file_response"],
                          parse_mode='Markdown')
-    user_dir = ds_controller.clean_user_dir(message.chat.id)
+    user_dir = await ds_controller.clean_user_dir(message.chat.id)
     bot_logger.logger.info(
         f"Chat: {message.chat.id} - Cleaned history and files in folder {user_dir}.")
     await message.answer(ds_controller.metadata["info"]["clean_info"],
@@ -138,11 +141,11 @@ async def handle_message(message: types.Message, bot: Bot):
             await message.answer(ds_controller.metadata["response"]["loading_file_response"].replace("{file}", f"*{file_name}*"),
                                  parse_mode='Markdown')
             try:
-                path = ds_controller.get_path(message.chat.id)
+                path = await ds_controller.get_path(message.chat.id)
                 await bot.download_file(file_info.file_path, path + file_name)
                 bot_logger.logger.info(
                     f"Chat: {message.chat.id} - Downloaded file {file_name} to path: {path}.")
-                ds_controller.change_docs_path(message.chat.id)
+                await ds_controller.change_docs_path(message.chat.id)
                 await message.answer(ds_controller.metadata["response"]["file_loaded_response"].replace("{file}", f"*{file_name}*"),
                                      parse_mode='Markdown')
             except Exception as e:
@@ -151,7 +154,8 @@ async def handle_message(message: types.Message, bot: Bot):
                 bot_logger.logger.exception(e)
                 await message.answer(ds_controller.metadata["error"]["loading_file_error"])
         except Exception as e:
-            bot_logger.logger.error(f"Chat: {message.chat.id} - Error occurred: {e}.")
+            bot_logger.logger.error(
+                f"Chat: {message.chat.id} - Error occurred: {e}.")
             bot_logger.logger.exception(e)
             await message.reply(message, e)
     else:
