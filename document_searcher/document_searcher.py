@@ -9,6 +9,7 @@ from document_searcher.intent_summarizer import IntentSummarizer
 from document_searcher.context_retriever import ContextRetriever
 from document_searcher.errors import TokenError, TimeError, FileError
 from document_searcher.config import load_config
+from loggers.loggers import SearcherLogger
 
 USER = "user"
 ASSISTANT = "assistant"
@@ -31,32 +32,38 @@ class DocumentSearcher:
         self.intent_summarizer = IntentSummarizer()
         self.context_retriever = ContextRetriever(self.docs_path)
         self.error_code = 0
+        self.searcher_logger = SearcherLogger()
 
         with open("./prompts/find_answer.txt", 'r', encoding='utf-8') as file:
             self.prompt_template = file.read()
 
     def _summarize_user_intent(self, query: str) -> str:
         intent = self.intent_summarizer(query, self._make_str_chat_history())
+        self.searcher_logger.logger.info("Summarized user intent")
         return intent
 
     def _get_context(self, user_intent: str) -> list[str]:
         documents_context_list = self.context_retriever(user_intent)
+        self.searcher_logger.logger.info("Got context from document database")
         return documents_context_list
 
     def _get_model_answer(self, documents_context_list: list[str]) -> str:
         prompt = self.prompt_template.replace('{chat_history}',
                                               self._make_str_chat_history())
         prompt = prompt.replace('{context}', f"\n{documents_context_list}")
+        self.searcher_logger.logger.info("Customized prompt for extracting answer from documents.")
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
                                             max_new_tokens=300,
                                             temperature=0.2).strip()
+        self.searcher_logger.logger.info("Got LLM response.")
         return response
 
     def _make_str_chat_history(self) -> str:
         chat_history_str = ""
         for message in self.chat_history:
             chat_history_str += f"{message['role']}: {message['content']}\n"
+        self.searcher_logger.logger.info("Made str from chat_history.")
         return chat_history_str
 
     def ask(self, query: str) -> str:
@@ -84,9 +91,13 @@ class DocumentSearcher:
             self.chat_history.append(assistant_message)
         except requests.exceptions.ReadTimeout or ReadTimeoutError or urllib3.exceptions.ReadTimeoutError or TimeoutError as e:
             self.error_code = 1
+            self.searcher_logger.logger.error("RunTime error.")
+            self.searcher_logger.logger.exception(e)
             raise TimeError() from e
         except ValueError as e:
             self.error_code = 2
+            self.searcher_logger.logger.error("Token expired.")
+            self.searcher_logger.logger.exception(e)
             raise TokenError() from e
         return response
 
@@ -100,6 +111,11 @@ class DocumentSearcher:
         try:
             self.context_retriever.load_data_base(new_docs_path)
             self.docs_path = new_docs_path
+            self.searcher_logger.logger.info(f"Database loaded from {new_docs_path}.")
         except FileNotFoundError or PermissionError as e:
             self.error_code = 3
+            self.searcher_logger.logger.error(f"Error while loading file from {new_docs_path}.")
+            self.searcher_logger.logger.exception(e)
             raise FileError() from e
+        except Exception as e:
+            self.searcher_logger.logger.exception(e)

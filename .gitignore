@@ -3,3 +3,4 @@
 .vscode/
 Pipfile.lock
 documents/
+logs/
