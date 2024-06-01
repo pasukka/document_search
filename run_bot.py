@@ -8,12 +8,14 @@ from aiogram_dialog import setup_dialogs
 from bot.bot import router, bot_logger
 from bot.commands import set_commands
 from bot.windows import file_list_window, remove_files_window
+from database.database import create_database
 
 
 async def start():
     load_dotenv()
     bot = Bot(os.getenv('CHATBOT_KEY'))
     info = await bot.get_me()
+    await create_database()
     bot_logger.logger.info(f"Started bot @{info.username} id={bot.id}.")
     dp = Dispatcher()
     dp.include_router(router)
