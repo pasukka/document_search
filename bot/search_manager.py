@@ -33,8 +33,10 @@ class DocumentSearcherManager:
             self.manager_logger.logger.error(f"Chat: {id} - RunTime error.")
         elif type(error) == document_searcher.errors.TokenError:
             error_str = self.metadata["error"]["error_token_response"]
-            self.bot_logger.logger.error(f"Chat: {id} - Token expired. Needs changing.")
-            self.manager_logger.logger.error(f"Chat: {id} - Token expired. Needs changing.")
+            self.bot_logger.logger.error(
+                f"Chat: {id} - Token expired. Needs changing.")
+            self.manager_logger.logger.error(
+                f"Chat: {id} - Token expired. Needs changing.")
         elif type(error) == document_searcher.errors.FileError:
             error_str = self.metadata["error"]["error_file"]
             self.bot_logger.logger.error(f"Chat: {id} - File error.")
@@ -143,7 +145,7 @@ class DocumentSearcherManager:
         date_now = datetime.datetime.now()
         id = f"{str(chat_id)}-{str(date_now.date())}-{str(date_now.hour)}-{str(date_now.minute)}"
         self.user_feedback_logger.logger.warning(
-            f'Id: {id} - Chat_id: {chat_id}\nMessage: {message}\n\n')
+            f'Id: {id} - Chat_id: {chat_id}\nMessage: {message}')
         self.manager_logger.logger.info(
             f"Chat: {chat_id} - Saved feedback id={id}.")
         return id
