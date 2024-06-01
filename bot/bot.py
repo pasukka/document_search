@@ -106,7 +106,7 @@ async def handle_clean(message: types.Message):
                          parse_mode='Markdown')
     user_dir = ds_controller.clean_user_dir(message.chat.id)
     bot_logger.logger.info(
-        f"Chat: {message.chat.id} - Cleaned files in folder {user_dir} and history.")
+        f"Chat: {message.chat.id} - Cleaned history and files in folder {user_dir}.")
     await message.answer(ds_controller.metadata["info"]["clean_info"],
                          parse_mode='Markdown')
 
@@ -141,18 +141,18 @@ async def handle_message(message: types.Message, bot: Bot):
                 path = ds_controller.get_path(message.chat.id)
                 await bot.download_file(file_info.file_path, path + file_name)
                 bot_logger.logger.info(
-                    f"Chat: {message.chat.id} - Downloaded file locally to path: {path}.")
+                    f"Chat: {message.chat.id} - Downloaded file {file_name} to path: {path}.")
                 ds_controller.change_docs_path(message.chat.id)
                 await message.answer(ds_controller.metadata["response"]["file_loaded_response"].replace("{file}", f"*{file_name}*"),
                                      parse_mode='Markdown')
             except Exception as e:
                 bot_logger.logger.error(
-                    f"Chat: {message.chat.id} - Loading file error.")
+                    f"Chat: {message.chat.id} - Error while loading file {file_name}.")
+                bot_logger.logger.exception(e)
                 await message.answer(ds_controller.metadata["error"]["loading_file_error"])
-                print(e)
         except Exception as e:
-            bot_logger.logger.error(
-                f"Chat: {message.chat.id} - Error occurred: {e}.")
+            bot_logger.logger.error(f"Chat: {message.chat.id} - Error occurred: {e}.")
+            bot_logger.logger.exception(e)
             await message.reply(message, e)
     else:
         bot_logger.logger.warning(
