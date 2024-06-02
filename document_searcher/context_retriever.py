@@ -18,6 +18,7 @@ class ContextRetriever:
         self.model = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
         self.documents_path = documents_path
         self.logger = ContextRetrieverLogger()
+        self.debug = False
         self.documents_embeddings = HuggingFaceHubEmbeddings(repo_id=self.model,
                                                              task="feature-extraction",
                                                              huggingfacehub_api_token=os.getenv('HUGGINGFACE_EMBEDDINGS_TOKEN'))
@@ -27,16 +28,19 @@ class ContextRetriever:
         relevant_documents = self.__find_relevant_documents(user_intent)
         documents_context_list = [
             doc.page_content for doc in relevant_documents]
-        self.logger.logger.info("Got relevant documents rom database.")
+        self.logger.logger.info("Got relevant documents from database.")
+        if self.debug:
+            self.logger.logger.debug(f"RELEVANT DOCS: {relevant_documents}")
+            self.logger.logger.debug(f"CONTEXT: {documents_context_list}")
         return documents_context_list
 
     def load_data_base(self, path: str) -> None:
         if not os.path.exists(path):
             self.logger.logger.warning(f"No directory {path}.")
-            raise FileNotFoundError('Директории не существует.')
+            raise FileNotFoundError(f'Директории {path} не существует.')
         self.documents_path = path
         if os.path.exists(path+'index.faiss'):
-            self.logger.logger.info("Loading database from path.")
+            self.logger.logger.info(f"Loading database from {path}.")
             # loading needs allow_dangerous_deserialization
             self.db = FAISS.load_local(path,
                                        self.documents_embeddings,
