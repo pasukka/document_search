@@ -20,6 +20,12 @@ class ChatCreationError(DatabaseException):
         super().__init__(self.message)
 
 
+class AdminCreationError(DatabaseException):
+    def __init__(self):
+        self.message = f"Error occurred while creating admin!"
+        super().__init__(self.message)
+
+
 class ChatDeletionError(DatabaseException):
     def __init__(self, id):
         self.message = f"Error occurred while deleting chat {id}!"
