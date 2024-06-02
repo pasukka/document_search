@@ -17,12 +17,20 @@ async def set_commands(bot: Bot):
             description='список загруженных документов'
         ),
         BotCommand(
+            command='my_docs',
+            description='поиск по загруженным документам'
+        ),
+        BotCommand(
             command='clean',
             description='очистить историю документов'
         ),
         BotCommand(
             command='callback',
             description='отправить описание проблемы разработчикам'
+        ),
+        BotCommand(
+            command='debug_mode',
+            description='модуль разработчика'
         )
     ]
     await bot.set_my_commands(commands, BotCommandScopeDefault())
