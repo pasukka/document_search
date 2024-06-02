@@ -1,4 +1,4 @@
 app-config:
   llm: 'mistralai/Mixtral-8x7B-Instruct-v0.1'
   docs_path: './documents/'
-  log_messages: True
+  debug_mode: False
