@@ -4,12 +4,12 @@ import yaml
 class Config:
     llm: str
     docs_path: str
-    log_messages: bool
+    debug_mode: bool
 
-    def __init__(self, llm: str, docs_path: str, log_messages: bool):
+    def __init__(self, llm: str, docs_path: str, debug_mode: bool):
         self.llm = llm
         self.docs_path = docs_path
-        self.log_messages = log_messages
+        self.debug_mode = debug_mode
 
 
 def load_config(file_path: str) -> Config:
@@ -18,4 +18,4 @@ def load_config(file_path: str) -> Config:
 
     return Config(config_dict['llm'],
                   config_dict['docs_path'],
-                  config_dict['log_messages'])
+                  config_dict['debug_mode'])
