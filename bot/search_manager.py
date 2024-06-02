@@ -8,6 +8,7 @@ import document_searcher
 from document_searcher.document_searcher import DocumentSearcher
 from loggers.loggers import BotLogger, CallbackLogger, ManagerLogger
 from database.database import get_files_path
+from database.errors import ChatPathError
 
 MAX_RETRIES = 2
 
@@ -66,7 +67,13 @@ class DocumentSearcherManager:
         return self.docs_path + 'chat_' + str(chat_id) + '/'
         
     async def get_user_dir(self, chat_id: int) -> str:
-        path = (await get_files_path(chat_id))[0]
+        path = ""
+        try:
+            path = (await get_files_path(chat_id))[0]
+            self.bot_logger.logger.info(f"Chat: {chat_id} - Got user path from database.")
+        except ChatPathError as e:
+            self.bot_logger.logger.warning(f"Chat: {chat_id} - Error occurred while creating chat.")
+            self.bot_logger.logger.exception(e)
         return path
 
     async def restart(self, chat_id: int) -> None:
