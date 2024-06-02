@@ -1,3 +1,4 @@
+import hashlib
 from aiogram import Bot, types, F, Router
 from aiogram.types import ContentType, CallbackQuery
 from aiogram.filters import Command, StateFilter
@@ -7,11 +8,12 @@ from aiogram_dialog import StartMode
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.kbd import Button
 
-from bot.states import CallBackForm, DeleteFilesForm
+from bot.states import CallBackForm, DeleteFilesForm, DebugForm
 from bot.keyboards import reply_keyboard, cancel_inline_keyboard
 from bot.search_manager import DocumentSearcherManager
 from database.database import create_chat
 from database.errors import ChatCreationError
+
 
 CHECKED = '✅'
 
@@ -23,8 +25,8 @@ bot_logger = ds_controller.bot_logger
 @router.callback_query(F.data.in_(['cancel']))
 async def cancel(call: CallbackQuery, state: FSMContext):
     bot_logger.logger.info(
-        f"Chat: {call.message.chat.id} - Canceled callback sending.")
-    answer = ds_controller.metadata["response"]["cancelling_callback_response"]
+        f"Chat: {call.message.chat.id} - Canceled sending callback or switching to debug mode.")
+    answer = ds_controller.metadata["response"]["cancelling_response"]
     await call.message.answer(answer, parse_mode='Markdown')
     await call.answer()
     await state.clear()
@@ -48,6 +50,17 @@ async def remove_files(call: CallbackQuery, button: Button, dialog_manager: Dial
 async def handle_help(message: types.Message):
     bot_logger.logger.info(f"Chat: {message.chat.id} - Showing help info.")
     await message.answer(ds_controller.metadata["info"]["help_info"].replace("_", "\\_"), parse_mode='Markdown')
+
+
+@router.message(Command("my_docs"))
+async def handle_help(message: types.Message):
+    chat_id = message.chat.id
+    bot_logger.logger.info(f"Chat: {chat_id} - Search by user's documents.")
+    res = await ds_controller.change_docs_path(chat_id)
+    if res:
+        await message.answer('Теперь поиск ведется по вашим файлам!')
+    else:
+        await message.answer('В вашей папке нет файлов. Загрузите их и тогда поиск автоматичски будет вестись по ним.')
 
 
 async def list_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -105,7 +118,8 @@ async def handle_start(message: types.Message):
         await create_chat(id, message.chat.type, user_dir_path)
         bot_logger.logger.info(f"Chat: {id} - Created chat.")
     except ChatCreationError as e:
-        bot_logger.logger.warning(f"Chat: {id} - Error occurred while creating chat.")
+        bot_logger.logger.warning(
+            f"Chat: {id} - Error occurred while creating chat.")
         bot_logger.logger.exception(e)
 
 
@@ -134,6 +148,31 @@ async def handle_callback(message: types.Message, state: FSMContext):
     await state.set_state(CallBackForm.GET_CALLBACK)
     await message.answer(ds_controller.metadata["response"]["write_callback_response"],
                          reply_markup=cancel_inline_keyboard)
+
+
+@router.message(StateFilter(DebugForm.password))
+async def checking_psw(message: types.Message, state: FSMContext):
+    psw = hashlib.md5(str(message.text).encode('utf-8')).hexdigest()
+    chat_id = message.chat.id
+    bot_logger.logger.info(f"Chat: {chat_id} - Got password.")
+    right_psw = await ds_controller.check_psw(chat_id, psw)
+    if right_psw:
+        bot_logger.logger.info(
+            f"Chat: {chat_id} - Right password. Switching to debug mode")
+        await message.answer("Переключаемся на модуль разработчика")
+        ds_controller.switch_to_debug()
+    else:
+        bot_logger.logger.info(f"Chat: {chat_id} - Wrong password.")
+        await message.answer("Пароль неверен.")
+    await state.clear()
+
+
+@router.message(F.content_type == ContentType.TEXT, Command("debug_mode"))
+async def handle_debug_mode(message: types.Message, state: FSMContext):
+    bot_logger.logger.info(
+        f"Chat: {message.chat.id} - Asking for debug mode password.")
+    await message.answer("Введите пароль", reply_markup=cancel_inline_keyboard)
+    await state.set_state(DebugForm.password)
 
 
 @router.message(F.content_type == ContentType.DOCUMENT)

@@ -15,7 +15,8 @@ class BotLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('botLogger')
-        self.file_handler = logging.FileHandler('logs/bot_logger.log',
+        self.file = 'logs/bot_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.file_handler.setFormatter(self.formatter)
@@ -27,7 +28,8 @@ class ManagerLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('managerLogger')
-        self.file_handler = logging.FileHandler('logs/manager_logger.log',
+        self.file = 'logs/manager_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.file_handler.setFormatter(self.formatter)
@@ -39,7 +41,21 @@ class SearcherLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('searcherLogger')
-        self.file_handler = logging.FileHandler('logs/searcher_logger.log',
+        self.file = 'logs/searcher_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
+                                                mode="a+",
+                                                encoding="utf8")
+        self.file_handler.setFormatter(self.formatter)
+        self.logger.addHandler(self.file_handler)
+
+
+class DBLogger(Logger):
+
+    def __init__(self):
+        super().__init__()
+        self.logger = logging.getLogger('dbLogger')
+        self.file = 'logs/db_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.file_handler.setFormatter(self.formatter)
@@ -51,7 +67,8 @@ class IntentSummarizerLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('intentSummarizerLogger')
-        self.file_handler = logging.FileHandler('logs/intent_logger.log',
+        self.file = 'logs/intent_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.file_handler.setFormatter(self.formatter)
@@ -63,7 +80,8 @@ class ContextRetrieverLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('contextRetrieverLogger')
-        self.file_handler = logging.FileHandler('logs/context_logger.log',
+        self.file = 'logs/context_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.file_handler.setFormatter(self.formatter)
@@ -75,7 +93,8 @@ class CallbackLogger(Logger):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('callbackLogger')
-        self.file_handler = logging.FileHandler('logs/callback_logger.log',
+        self.file = 'logs/callback_logger.log'
+        self.file_handler = logging.FileHandler(self.file,
                                                 mode="a+",
                                                 encoding="utf8")
         self.formatter = logging.Formatter(

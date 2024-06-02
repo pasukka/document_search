@@ -3,6 +3,7 @@ from huggingface_hub import InferenceClient
 from document_searcher.config import load_config
 from loggers.loggers import IntentSummarizerLogger
 
+
 class IntentSummarizer:
     _hf_token: str
     model: str
@@ -12,6 +13,7 @@ class IntentSummarizer:
         self._hf_token = os.getenv('HUGGINGFACE_INTENT_TOKEN')
         config = load_config('config.yml')
         self.model = config.llm
+        self.debug = False
         self.logger = IntentSummarizerLogger()
         self.llm = InferenceClient(model=self.model,
                                    timeout=100,
@@ -26,5 +28,9 @@ class IntentSummarizer:
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
                                             max_new_tokens=100).strip()
+        if self.debug:
+            self.logger.logger.debug(f"QUERY: {query}")
+            self.logger.logger.debug(f"PROMPT: {prompt}")
+            self.logger.logger.debug(f"RESPONSE: {response}")
         self.logger.logger.info("Got LLM response for intent summarization.")
         return response

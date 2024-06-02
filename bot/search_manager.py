@@ -7,8 +7,8 @@ import shutil
 import document_searcher
 from document_searcher.document_searcher import DocumentSearcher
 from loggers.loggers import BotLogger, CallbackLogger, ManagerLogger
-from database.database import get_files_path
-from database.errors import ChatPathError
+from database.database import get_files_path, get_adm_psw
+from database.errors import ChatPathError, NoChatError
 
 MAX_RETRIES = 2
 
@@ -22,7 +22,7 @@ class DocumentSearcherManager:
         self.bot_logger = BotLogger()
         self.manager_logger = ManagerLogger()
         self.user_feedback_logger = CallbackLogger()
-        self.log_path = "logs/user_errors.log"
+        self.debug = False
         with open('metadata/metadata.json', 'r', encoding='utf-8') as file:
             self.metadata = json.load(file)
         # await self.clean_all_user_dirs()
@@ -54,10 +54,16 @@ class DocumentSearcherManager:
         while answer == "" and self.retries < MAX_RETRIES:
             try:
                 answer = self.doc_searcher.ask(message)
+                if self.debug:
+                    self.manager_logger.logger.debug(
+                        f"Chat: {id} - doc_searcher answer:\n{answer}.")
                 self.retries += 1
                 time.sleep(4)
             except Exception as e:
                 answer = self.get_error_message(e, id)
+                if self.debug:
+                    self.manager_logger.logger.debug(
+                        f"Chat: {id} - answer after error:\n{answer}.")
                 self.manager_logger.logger.exception(e)
         self.retries = 0
         self.manager_logger.logger.info(f"Chat: {id} - Got answer from LLM.")
@@ -65,32 +71,45 @@ class DocumentSearcherManager:
 
     def make_user_dir(self, chat_id: int) -> str:
         return self.docs_path + 'chat_' + str(chat_id) + '/'
-        
+
     async def get_user_dir(self, chat_id: int) -> str:
         path = ""
         try:
-            path = (await get_files_path(chat_id))[0]
-            self.bot_logger.logger.info(f"Chat: {chat_id} - Got user path from database.")
+            path = (await get_files_path(chat_id))
+            path = path[0] if path != None else self.docs_path
+            self.bot_logger.logger.info(
+                f"Chat: {chat_id} - Got user path from database.")
         except ChatPathError as e:
-            self.bot_logger.logger.warning(f"Chat: {chat_id} - Error occurred while creating chat.")
+            self.bot_logger.logger.warning(
+                f"Chat: {chat_id} - Error occurred while creating chat.")
             self.bot_logger.logger.exception(e)
+        if path == "":
+            self.bot_logger.logger.exception(NoChatError(chat_id))
+            path = self.docs_path
         return path
 
     async def restart(self, chat_id: int) -> None:
         await self.clean_user_dir(chat_id)
 
-    async def change_docs_path(self, chat_id: int) -> None:
+    async def change_docs_path(self, chat_id: int) -> bool:
+        changed = True
         user_dir_path = await self.get_user_dir(chat_id)
-        self.doc_searcher.change_docs_path(user_dir_path)
-        self.manager_logger.logger.info(
-            f"Chat: {chat_id} - Changed documents path.")
+        if user_dir_path != "" and os.path.exists(user_dir_path):
+            self.doc_searcher.change_docs_path(user_dir_path)
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
+        else:
+            changed = False
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
+        return changed
 
     async def get_path(self, chat_id: int) -> str:
         user_dir_path = await self.get_user_dir(chat_id)
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         self.manager_logger.logger.info(
-            f"Chat: {chat_id} - Got user directory path.")
+            f"Chat: {chat_id} - Got user directory path {user_dir_path}.")
         return user_dir_path
 
     async def get_docs_list(self, chat_id: int) -> list[str]:
@@ -137,15 +156,15 @@ class DocumentSearcherManager:
                         if f.split('.')[1] == 'txt']
             if len(filelist) == 0:
                 self.manager_logger.logger.info(
-                    f"Chat: {chat_id} - Removing directory.")
-                self.manager_logger.logger.debug(
-                    f"Chat: {chat_id} - Directory does not contain files for searching.")
+                    f"Chat: {chat_id} - Removing directory {user_dir}.")
+                self.manager_logger.logger.info(
+                    f"Chat: {chat_id} - Directory {user_dir} does not contain files for searching.")
                 self.doc_searcher.restart()
                 new_path = self.doc_searcher.docs_path
                 shutil.rmtree(user_dir)
             self.doc_searcher.change_docs_path(new_path)
             self.manager_logger.logger.info(
-                f"Chat: {chat_id} - Removed directory.")
+                f"Chat: {chat_id} - Removed directory {user_dir}.")
         except Exception as e:
             self.manager_logger.logger.error(
                 f"Chat: {chat_id} - Error occurred: {e}.")
@@ -161,3 +180,10 @@ class DocumentSearcherManager:
         self.manager_logger.logger.info(
             f"Chat: {chat_id} - Saved feedback id={id}.")
         return id
+
+    async def check_psw(self, chat_id, psw: str) -> bool:
+        return (psw == await get_adm_psw())
+
+    def switch_to_debug(self):
+        self.debug = True
+        self.doc_searcher.switch_to_debug()

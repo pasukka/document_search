@@ -16,6 +16,7 @@ transformers = "*"
 aiogram-dialog = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 
