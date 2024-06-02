@@ -105,6 +105,7 @@ async def test_remove_chosen_files():
     filelist = await sm.get_docs_list(id)
     assert len(filelist) == 0
     make_path(path)
+    await delete_chat(id)
     await close_db()
 
 
@@ -113,8 +114,9 @@ async def test_remove_chosen_files_error():
     sm = DocumentSearcherManager()
     id = 0
     path = './documents/chat_0/'
-    filelist = ['file.txt']
     await create_database()
+    await create_chat(id, 'private', path)
+    filelist = ['file.txt']
     await sm.remove_chosen_files(id, filelist)
     try:
         filelist = await sm.get_docs_list(id)
@@ -122,6 +124,7 @@ async def test_remove_chosen_files_error():
         pass
     assert len(filelist) == 0
     make_path(path)
+    await delete_chat(id)
     await close_db()
 
 
