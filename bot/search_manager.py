@@ -109,7 +109,7 @@ class DocumentSearcherManager:
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
         self.manager_logger.logger.info(
-            f"Chat: {chat_id} - Got user directory path.")
+            f"Chat: {chat_id} - Got user directory path {user_dir_path}.")
         return user_dir_path
 
     async def get_docs_list(self, chat_id: int) -> list[str]:
@@ -156,15 +156,15 @@ class DocumentSearcherManager:
                         if f.split('.')[1] == 'txt']
             if len(filelist) == 0:
                 self.manager_logger.logger.info(
-                    f"Chat: {chat_id} - Removing directory.")
-                self.manager_logger.logger.debug(
-                    f"Chat: {chat_id} - Directory does not contain files for searching.")
+                    f"Chat: {chat_id} - Removing directory {user_dir}.")
+                self.manager_logger.logger.info(
+                    f"Chat: {chat_id} - Directory {user_dir} does not contain files for searching.")
                 self.doc_searcher.restart()
                 new_path = self.doc_searcher.docs_path
                 shutil.rmtree(user_dir)
             self.doc_searcher.change_docs_path(new_path)
             self.manager_logger.logger.info(
-                f"Chat: {chat_id} - Removed directory.")
+                f"Chat: {chat_id} - Removed directory {user_dir}.")
         except Exception as e:
             self.manager_logger.logger.error(
                 f"Chat: {chat_id} - Error occurred: {e}.")
