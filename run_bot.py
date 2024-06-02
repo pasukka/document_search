@@ -9,13 +9,20 @@ from bot.bot import router, bot_logger
 from bot.commands import set_commands
 from bot.windows import file_list_window, remove_files_window
 from database.database import create_database
+from database.errors import DBCreationError
 
 
 async def start():
     load_dotenv()
     bot = Bot(os.getenv('CHATBOT_KEY'))
     info = await bot.get_me()
-    await create_database()
+    try:
+        await create_database()
+        bot_logger.logger.info(f"Created database.")
+    except DBCreationError as e:
+        bot_logger.logger.warning(f"Error occurred while creating database.")
+        bot_logger.logger.exception(e)
+
     bot_logger.logger.info(f"Started bot @{info.username} id={bot.id}.")
     dp = Dispatcher()
     dp.include_router(router)
