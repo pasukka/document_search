@@ -48,14 +48,16 @@ class DocumentSearcher:
         documents_context_list = self.context_retriever(user_intent)
         self.searcher_logger.logger.info("Got context from document database")
         if self.debug:
-            self.searcher_logger.logger.debug(f"CONTEXT: {documents_context_list}")
+            self.searcher_logger.logger.debug(
+                f"CONTEXT: {documents_context_list}")
         return documents_context_list
 
     def _get_model_answer(self, documents_context_list: list[str]) -> str:
         prompt = self.prompt_template.replace('{chat_history}',
                                               self._make_str_chat_history())
         prompt = prompt.replace('{context}', f"\n{documents_context_list}")
-        self.searcher_logger.logger.info("Customized prompt for extracting answer from documents.")
+        self.searcher_logger.logger.info(
+            "Customized prompt for extracting answer from documents.")
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
                                             max_new_tokens=300,
@@ -77,14 +79,15 @@ class DocumentSearcher:
         try:
             if self.debug:
                 self.searcher_logger.logger.debug(f"QUERY: {query}")
-            
+
             user_intent = self._summarize_user_intent(query)
             documents_context_list = self._get_context(user_intent)
             user_message = {"role": USER, "content": query}
             self.chat_history.append(user_message)
             if self.debug:
-                self.searcher_logger.logger.debug(f"CHAT_HISTORY: {self.chat_history}")
-            
+                self.searcher_logger.logger.debug(
+                    f"CHAT_HISTORY: {self.chat_history}")
+
             response = self._get_model_answer(documents_context_list)
             assistant_message = {"role": ASSISTANT, "content": response}
             self.chat_history.append(assistant_message)
@@ -110,11 +113,13 @@ class DocumentSearcher:
         try:
             self.context_retriever.load_data_base(new_docs_path)
             self.docs_path = new_docs_path
-            self.searcher_logger.logger.info(f"Database loaded from {new_docs_path}.")
+            self.searcher_logger.logger.info(
+                f"Database loaded from {new_docs_path}.")
             self.chat_history = []
         except FileNotFoundError or PermissionError as e:
             self.error_code = 3
-            self.searcher_logger.logger.error(f"Error while loading file from {new_docs_path}.")
+            self.searcher_logger.logger.error(
+                f"Error while loading file from {new_docs_path}.")
             self.searcher_logger.logger.exception(e)
             raise FileError() from e
         except Exception as e:
