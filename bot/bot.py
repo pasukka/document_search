@@ -11,6 +11,7 @@ from bot.states import CallBackForm, DeleteFilesForm
 from bot.keyboards import reply_keyboard, cancel_inline_keyboard
 from bot.search_manager import DocumentSearcherManager
 from database.database import create_chat
+from database.errors import ChatCreationError
 
 CHECKED = '✅'
 
@@ -100,7 +101,12 @@ async def handle_start(message: types.Message):
                          reply_markup=reply_keyboard)
     await ds_controller.restart(id)
     user_dir_path = ds_controller.make_user_dir(id)
-    await create_chat(id, message.chat.type, user_dir_path)
+    try:
+        await create_chat(id, message.chat.type, user_dir_path)
+        bot_logger.logger.info(f"Chat: {id} - Created chat.")
+    except ChatCreationError as e:
+        bot_logger.logger.warning(f"Chat: {id} - Error occurred while creating chat.")
+        bot_logger.logger.exception(e)
 
 
 @router.message(Command("clean"))
