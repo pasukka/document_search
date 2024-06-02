@@ -55,13 +55,15 @@ class DocumentSearcherManager:
             try:
                 answer = self.doc_searcher.ask(message)
                 if self.debug:
-                    self.manager_logger.logger.debug(f"Chat: {id} - doc_searcher answer:\n{answer}.")
+                    self.manager_logger.logger.debug(
+                        f"Chat: {id} - doc_searcher answer:\n{answer}.")
                 self.retries += 1
                 time.sleep(4)
             except Exception as e:
                 answer = self.get_error_message(e, id)
                 if self.debug:
-                    self.manager_logger.logger.debug(f"Chat: {id} - answer after error:\n{answer}.")
+                    self.manager_logger.logger.debug(
+                        f"Chat: {id} - answer after error:\n{answer}.")
                 self.manager_logger.logger.exception(e)
         self.retries = 0
         self.manager_logger.logger.info(f"Chat: {id} - Got answer from LLM.")
@@ -92,15 +94,15 @@ class DocumentSearcherManager:
     async def change_docs_path(self, chat_id: int) -> bool:
         changed = True
         user_dir_path = await self.get_user_dir(chat_id)
-        if user_dir_path != "":
+        if user_dir_path != "" and os.path.exists(user_dir_path):
             self.doc_searcher.change_docs_path(user_dir_path)
-            self.manager_logger.logger.info(f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
         else:
             changed = False
-            self.manager_logger.logger.info(f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
         return changed
-
-
 
     async def get_path(self, chat_id: int) -> str:
         user_dir_path = await self.get_user_dir(chat_id)
