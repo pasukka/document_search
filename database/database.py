@@ -31,9 +31,11 @@ async def create_admin(psw: str):
         db_logger.logger.exception(e)
         raise DBCreationError() from e
     try:
-        admin = cursor.execute(f"SELECT 1 FROM users WHERE username == 'admin'").fetchone()
+        admin = cursor.execute(
+            f"SELECT 1 FROM users WHERE username == 'admin'").fetchone()
         if admin:
-            cursor.execute(f"DELETE FROM users WHERE username == 'admin'").fetchone()
+            cursor.execute(
+                f"DELETE FROM users WHERE username == 'admin'").fetchone()
             db.commit()
             admin = None
         if not admin:
