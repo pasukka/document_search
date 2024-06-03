@@ -53,14 +53,14 @@ async def handle_help(message: types.Message):
 
 
 @router.message(Command("my_docs"))
-async def handle_help(message: types.Message):
+async def handle_search(message: types.Message):
     chat_id = message.chat.id
     bot_logger.logger.info(f"Chat: {chat_id} - Search by user's documents.")
     res = await ds_controller.change_docs_path(chat_id)
     if res:
-        await message.answer('Теперь поиск ведется по вашим файлам!')
+        await message.answer(ds_controller.metadata["info"]["search_response"])
     else:
-        await message.answer('В вашей папке нет файлов. Загрузите их и тогда поиск автоматичски будет вестись по ним.')
+        await message.answer(ds_controller.metadata["info"]["no_search_response"])
 
 
 async def list_files(call: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -111,8 +111,8 @@ async def handle_start(message: types.Message):
     bot_logger.logger.info(f"Chat: {id} - Started bot.")
     try:
         await message.answer(ds_controller.metadata["info"]["start_info"].replace("_", "\\_"),
-                            parse_mode='Markdown',
-                            reply_markup=reply_keyboard)
+                             parse_mode='Markdown',
+                             reply_markup=reply_keyboard)
         await ds_controller.restart(id)
         user_dir_path = ds_controller.make_user_dir(id)
         await create_chat(id, message.chat.type, user_dir_path)
@@ -177,29 +177,33 @@ async def handle_debug_mode(message: types.Message, state: FSMContext):
     await state.set_state(DebugForm.password)
 
 
+async def download_docs(message: types.Message, bot: Bot, file_name: str):
+    file_info = await bot.get_file(message.document.file_id)
+    bot_logger.logger.info(
+        f"Chat: {message.chat.id} - Got file in chat.")
+    await message.answer(ds_controller.metadata["response"]["loading_file_response"].replace("{file}", f"*{file_name}*"),
+                         parse_mode='Markdown')
+    try:
+        path = await ds_controller.get_path(message.chat.id)
+        await bot.download_file(file_info.file_path, path + file_name)
+        bot_logger.logger.info(
+            f"Chat: {message.chat.id} - Downloaded file {file_name} to path: {path}.")
+        await ds_controller.change_docs_path(message.chat.id)
+        await message.answer(ds_controller.metadata["response"]["file_loaded_response"].replace("{file}", f"*{file_name}*"),
+                             parse_mode='Markdown')
+    except Exception as e:
+        bot_logger.logger.error(
+            f"Chat: {message.chat.id} - Error while loading file {file_name}.")
+        bot_logger.logger.exception(e)
+        await message.answer(ds_controller.metadata["error"]["loading_file_error"])
+
+
 @router.message(F.content_type == ContentType.DOCUMENT)
 async def handle_message(message: types.Message, bot: Bot):
     file_name = message.document.file_name
     if 'txt' == file_name.split('.')[1]:
         try:
-            file_info = await bot.get_file(message.document.file_id)
-            bot_logger.logger.info(
-                f"Chat: {message.chat.id} - Got file in chat.")
-            await message.answer(ds_controller.metadata["response"]["loading_file_response"].replace("{file}", f"*{file_name}*"),
-                                 parse_mode='Markdown')
-            try:
-                path = await ds_controller.get_path(message.chat.id)
-                await bot.download_file(file_info.file_path, path + file_name)
-                bot_logger.logger.info(
-                    f"Chat: {message.chat.id} - Downloaded file {file_name} to path: {path}.")
-                await ds_controller.change_docs_path(message.chat.id)
-                await message.answer(ds_controller.metadata["response"]["file_loaded_response"].replace("{file}", f"*{file_name}*"),
-                                     parse_mode='Markdown')
-            except Exception as e:
-                bot_logger.logger.error(
-                    f"Chat: {message.chat.id} - Error while loading file {file_name}.")
-                bot_logger.logger.exception(e)
-                await message.answer(ds_controller.metadata["error"]["loading_file_error"])
+            await download_docs(message, bot, file_name)
         except Exception as e:
             bot_logger.logger.error(
                 f"Chat: {message.chat.id} - Error occurred: {e}.")
