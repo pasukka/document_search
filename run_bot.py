@@ -13,9 +13,13 @@ from database.database import create_database, create_admin, close_db
 from database.errors import DBCreationError
 
 
+load_dotenv()
+bot = Bot(os.getenv('CHATBOT_KEY'))
+dp = Dispatcher()
+dp.include_router(router)
+
+
 async def start():
-    load_dotenv()
-    bot = Bot(os.getenv('CHATBOT_KEY'))
     info = await bot.get_me()
     try:
         await create_database()
@@ -30,8 +34,6 @@ async def start():
         bot_logger.logger.exception(e)
         bot_logger.logger.critical(f"Closed db connection.")
 
-    dp = Dispatcher()
-    dp.include_router(router)
     dialog = Dialog(file_list_window, remove_files_window)
     dp.include_router(dialog)
     setup_dialogs(dp)
