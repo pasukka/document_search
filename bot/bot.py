@@ -22,6 +22,26 @@ ds_controller = DocumentSearcherManager()
 bot_logger = ds_controller.bot_logger
 
 
+@router.message(Command("start"))
+async def handle_start(message: types.Message):
+    id = message.chat.id
+    bot_logger.logger.info(f"Chat: {id} - Started bot.")
+    try:
+        await message.answer(ds_controller.metadata["info"]["start_info"].replace("_", "\\_"),
+                             parse_mode='Markdown',
+                             reply_markup=reply_keyboard)
+        await ds_controller.restart(id)
+        user_dir_path = ds_controller.make_user_dir(id)
+        await create_chat(id, message.chat.type, user_dir_path)
+        bot_logger.logger.info(f"Chat: {id} - Created chat.")
+    except ChatCreationError as e:
+        bot_logger.logger.warning(
+            f"Chat: {id} - Error occurred while creating chat.")
+        bot_logger.logger.exception(e)
+    except Exception as e:
+        bot_logger.logger.exception(e)
+
+
 @router.callback_query(F.data.in_(['cancel']))
 async def cancel(call: CallbackQuery, state: FSMContext):
     bot_logger.logger.info(
@@ -103,26 +123,6 @@ async def handle_docs_list(message: types.Message, dialog_manager: DialogManager
     await message.answer(f"Количество файлов: *{len(docs_list)}*",
                          parse_mode='Markdown')
     await dialog_manager.start(DeleteFilesForm.list_files, mode=StartMode.RESET_STACK)
-
-
-@router.message(Command("start"))
-async def handle_start(message: types.Message):
-    id = message.chat.id
-    bot_logger.logger.info(f"Chat: {id} - Started bot.")
-    try:
-        await message.answer(ds_controller.metadata["info"]["start_info"].replace("_", "\\_"),
-                             parse_mode='Markdown',
-                             reply_markup=reply_keyboard)
-        await ds_controller.restart(id)
-        user_dir_path = ds_controller.make_user_dir(id)
-        await create_chat(id, message.chat.type, user_dir_path)
-        bot_logger.logger.info(f"Chat: {id} - Created chat.")
-    except ChatCreationError as e:
-        bot_logger.logger.warning(
-            f"Chat: {id} - Error occurred while creating chat.")
-        bot_logger.logger.exception(e)
-    except Exception as e:
-        bot_logger.logger.exception(e)
 
 
 @router.message(Command("clean"))
