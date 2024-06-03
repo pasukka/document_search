@@ -109,17 +109,19 @@ async def handle_docs_list(message: types.Message, dialog_manager: DialogManager
 async def handle_start(message: types.Message):
     id = message.chat.id
     bot_logger.logger.info(f"Chat: {id} - Started bot.")
-    await message.answer(ds_controller.metadata["info"]["start_info"],
-                         parse_mode='Markdown',
-                         reply_markup=reply_keyboard)
-    await ds_controller.restart(id)
-    user_dir_path = ds_controller.make_user_dir(id)
     try:
+        await message.answer(ds_controller.metadata["info"]["start_info"].replace("_", "\\_"),
+                            parse_mode='Markdown',
+                            reply_markup=reply_keyboard)
+        await ds_controller.restart(id)
+        user_dir_path = ds_controller.make_user_dir(id)
         await create_chat(id, message.chat.type, user_dir_path)
         bot_logger.logger.info(f"Chat: {id} - Created chat.")
     except ChatCreationError as e:
         bot_logger.logger.warning(
             f"Chat: {id} - Error occurred while creating chat.")
+        bot_logger.logger.exception(e)
+    except Exception as e:
         bot_logger.logger.exception(e)
 
 
