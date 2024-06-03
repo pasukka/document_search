@@ -134,7 +134,7 @@ class DocumentSearcherManager:
             user_dir = await self.get_user_dir(chat_id)
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Got user directory: {user_dir}.")
-        if os.path.exists(user_dir):
+        if os.path.exists(user_dir) and user_dir != self.docs_path:
             shutil.rmtree(user_dir)
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Removing user directory: {user_dir}.")
