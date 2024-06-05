@@ -44,7 +44,7 @@ async def start():
     finally:
         await bot.session.close()
         bot_logger.logger.critical(f"Closed bot @{info.username} id={bot.id}.")
-        close_db()
+        await close_db()
 
 if __name__ == "__main__":
     try:
