@@ -1,14 +1,8 @@
 import pytest
 
 from aiogram import types, Dispatcher
-from bot.bot import handle_start, ds_controller
+from bot.handlers import handle_start, ds_controller
 from database.database import create_database, close_db
-
-async def echo(message: types.Message):
-    await message.answer(message.text)
-
-def setup(dp: Dispatcher):
-    dp.register_message_handler(echo)
 
 
 class MockMessage:
@@ -27,6 +21,6 @@ async def test_echo_handler():
     await create_database()
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handle_start(message=message_mock)
-    assert message_mock._answer == ds_controller.metadata["info"]["start_info"].replace("_", "\\_")
+    assert message_mock._answer == ds_controller.metadata["info"]["start_info"].replace(
+        "_", "\\_")
     await close_db()
-
