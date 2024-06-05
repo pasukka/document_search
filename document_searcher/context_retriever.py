@@ -9,6 +9,8 @@ from langchain_community.embeddings import HuggingFaceHubEmbeddings
 
 from loggers.loggers import ContextRetrieverLogger
 
+MAX_SCORE = 8
+
 
 class ContextRetriever:
     model: str
@@ -27,27 +29,28 @@ class ContextRetriever:
     def __call__(self, user_intent: str) -> list[str]:
         relevant_documents = self.__find_relevant_documents(user_intent)
         documents_context_list = [
-            doc.page_content for doc in relevant_documents]
+            doc[0].page_content for doc in relevant_documents]
         self.logger.logger.info("Got relevant documents from database.")
         if self.debug:
+            self.logger.logger.debug(f"USER INTENT: {user_intent}")
             self.logger.logger.debug(f"RELEVANT DOCS: {relevant_documents}")
             self.logger.logger.debug(f"CONTEXT: {documents_context_list}")
         return documents_context_list
 
-    def load_data_base(self, path: str) -> None:
+    def load_data_base(self, path: str, reload=False) -> None:
         if not os.path.exists(path):
             self.logger.logger.warning(f"No directory {path}.")
             raise FileNotFoundError(f'Директории {path} не существует.')
         self.documents_path = path
-        if os.path.exists(path+'index.faiss'):
+        if reload or not os.path.exists(path+'index.faiss'):
+            self.logger.logger.info("Reloading database.")
+            self.reload_db()
+        else:
             self.logger.logger.info(f"Loading database from {path}.")
             # loading needs allow_dangerous_deserialization
             self.db = FAISS.load_local(path,
                                        self.documents_embeddings,
                                        allow_dangerous_deserialization=True)
-        else:
-            self.logger.logger.info("Reloading database.")
-            self.reload_db()
 
     def reload_db(self) -> None:
         documents = self.__load_documents(self.documents_path)
@@ -94,6 +97,12 @@ class ContextRetriever:
 
     def __find_relevant_documents(self, query: str) -> list:
         embedding_vector = self.documents_embeddings.embed_query(query)
-        relevant_docs = self.db.similarity_search_by_vector(embedding_vector)
+        relevant_docs = self.db.similarity_search_with_score_by_vector(
+            embedding_vector)
+        result_list = [doc for doc in relevant_docs if doc[1] < MAX_SCORE]
+        if len(result_list) == 0:
+            result_list.append(relevant_docs[0])
+            self.logger.logger.info(
+                f"After reducing by max result list became empty. Adding first text from relevant documents.")
         self.logger.logger.info(f"Found relevant documents.")
-        return relevant_docs
+        return result_list
