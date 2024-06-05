@@ -52,10 +52,11 @@ class DocumentSearcher:
                 f"CONTEXT: {documents_context_list}")
         return documents_context_list
 
-    def _get_model_answer(self, documents_context_list: list[str]) -> str:
+    def _get_model_answer(self, documents_context_list: list[str], user_intent: str) -> str:
         prompt = self.prompt_template.replace('{chat_history}',
                                               self._make_str_chat_history())
         prompt = prompt.replace('{context}', f"\n{documents_context_list}")
+        prompt = prompt.replace('{user_intent}', user_intent)
         self.searcher_logger.logger.info(
             "Customized prompt for extracting answer from documents.")
         response = self.llm.text_generation(prompt,
@@ -88,7 +89,7 @@ class DocumentSearcher:
                 self.searcher_logger.logger.debug(
                     f"CHAT_HISTORY: {self.chat_history}")
 
-            response = self._get_model_answer(documents_context_list)
+            response = self._get_model_answer(documents_context_list, user_intent)
             assistant_message = {"role": ASSISTANT, "content": response}
             self.chat_history.append(assistant_message)
         except requests.exceptions.ReadTimeout or ReadTimeoutError or urllib3.exceptions.ReadTimeoutError or TimeoutError as e:
@@ -111,7 +112,7 @@ class DocumentSearcher:
         if new_docs_path == "":
             new_docs_path = self.config.docs_path
         try:
-            self.context_retriever.load_data_base(new_docs_path)
+            self.context_retriever.load_data_base(new_docs_path, reload=True)
             self.docs_path = new_docs_path
             self.searcher_logger.logger.info(
                 f"Database loaded from {new_docs_path}.")
