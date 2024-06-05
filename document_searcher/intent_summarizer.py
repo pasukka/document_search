@@ -27,6 +27,7 @@ class IntentSummarizer:
         self.logger.logger.info("Customized prompt for intent summarization.")
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
+                                            stop_sequences=['\n'],
                                             max_new_tokens=100).strip()
         if self.debug:
             self.logger.logger.debug(f"QUERY: {query}")
