@@ -68,18 +68,17 @@ async def handle_search(message: types.Message):
     bot_logger.logger.info(f"Chat: {chat_id} - Search by user's documents.")
     res = await ds_controller.change_docs_path(chat_id)
     if res:
-        await message.answer(ds_controller.metadata["info"]["search_response"])
+        await message.answer(ds_controller.metadata["response"]["search_response"])
     else:
-        await message.answer(ds_controller.metadata["info"]["no_search_response"])
+        await message.answer(ds_controller.metadata["response"]["no_search_response"])
 
 
 @router.callback_query(F.data.in_(['cancel']))
 async def cancel(call: CallbackQuery, state: FSMContext):
     bot_logger.logger.info(
         f"Chat: {call.message.chat.id} - Canceled sending callback or switching to debug mode.")
-    answer = ds_controller.metadata["response"]["cancelling_response"]
-    await call.message.answer(answer, parse_mode='Markdown')
-    await call.answer()
+    await call.message.answer(ds_controller.metadata["response"]["cancelling_response"],
+                              parse_mode='Markdown')
     await state.clear()
 
 
@@ -125,7 +124,7 @@ async def handle_debug_mode(message: types.Message, state: FSMContext):
 
 
 @router.message(F.content_type == ContentType.DOCUMENT)
-async def handle_message(message: types.Message, bot: Bot):
+async def handle_document(message: types.Message, bot: Bot):
     file_name = message.document.file_name
     if 'txt' == file_name.split('.')[1]:
         try:
