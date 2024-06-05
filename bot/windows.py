@@ -3,8 +3,9 @@ from aiogram_dialog import Window
 from aiogram_dialog.widgets.text import Const, Format
 from aiogram_dialog.widgets.kbd import Button, Multiselect, Column
 
+from bot.bot import CHECKED
 from bot.states import DeleteFilesForm
-from bot.bot import get_data, go_back, list_files, remove_files, CHECKED
+from bot.utils import get_data, go_back, list_files, remove_files
 
 
 file_list_window = Window(
