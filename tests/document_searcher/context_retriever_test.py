@@ -1,4 +1,5 @@
 import pytest
+import os
 from document_searcher.context_retriever import ContextRetriever
 
 
@@ -30,4 +31,14 @@ def test_error_reload_db():
         cr = ContextRetriever(documents_path)
         assert cr.documents_path != documents_path
 
-# TODO check context
+
+def test_load_documents():
+    documents_path = "documents/chat_1/"
+    cr = ContextRetriever(documents_path)
+    user_intent = "узнать, что такое Алиса"
+    with open(documents_path+"info_about_yandex_alice.txt", 'r', encoding='utf-8') as file:
+        real_context = file.readlines()
+    real_context = [line.replace('\n', '') for line in real_context]
+    documents_context_list = cr(user_intent)
+    assert documents_context_list == real_context
+
