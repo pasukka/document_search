@@ -107,12 +107,14 @@ class DocumentSearcher:
     def restart(self) -> None:
         self.chat_history = []
         self.docs_path = self.config.docs_path
+        self.change_docs_path()
+        self.searcher_logger.logger.info(f"Restarting doc searcher.")
 
     def change_docs_path(self, new_docs_path="") -> None:
         if new_docs_path == "":
             new_docs_path = self.config.docs_path
         try:
-            self.context_retriever.load_data_base(new_docs_path, reload=True)
+            self.context_retriever.load_data_base(new_docs_path)
             self.docs_path = new_docs_path
             self.searcher_logger.logger.info(
                 f"Database loaded from {new_docs_path}.")
