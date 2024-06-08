@@ -88,10 +88,11 @@ class ContextRetriever:
                              if isfile(join(path, f)) and f.split('.')[1] == 'txt']
         documents = []
         for i in range(len(list_of_documents)):
-            with open(path + list_of_documents[i], 'r', encoding='utf-8') as file:
+            doc_name = path + list_of_documents[i]
+            with open(doc_name, 'r', encoding='utf-8') as file:
                 text = file.read()
                 if text:
-                    documents.append({"id": i, "text": text})
+                    documents.append({"id": i, "name": doc_name, "text": text})
         self.logger.logger.info(f"Loaded files from path {path}.")
         return documents
 
@@ -106,3 +107,55 @@ class ContextRetriever:
                 f"After reducing by max result list became empty. Adding first text from relevant documents.")
         self.logger.logger.info(f"Found relevant documents.")
         return result_list
+
+    async def add_document(self, doc_path) -> bool:  # TODO: add logging
+        # TODO: if no db than need to make it
+        added = True
+        try:
+            documents = []
+            i = 10  # TODO: change it
+            with open(doc_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+                if text:
+                    documents.append({"id": i, "name": doc_path, "text": text})
+            self.logger.logger.info(f"Loaded file {doc_path}.")
+
+            df = pd.DataFrame(documents)
+
+            loader = DataFrameLoader(df, page_content_column='text')
+            loaded_documents = loader.load()
+            self.logger.logger.info(
+                f"Loaded database from files from {self.documents_path}.")
+
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
+                                                           chunk_overlap=0)
+            splitted_documents = text_splitter.split_documents(
+                loaded_documents)
+
+            extension = FAISS.add_documents(splitted_documents)
+            self.db.merge_from(extension)
+
+            self.logger.logger.info(
+                f"Added document doc_path to {self.documents_path}.")
+            self.db.save_local(self.documents_path)
+            self.logger.logger.info(
+                f"Saved database to {self.documents_path}.")
+        except Exception as e:
+            added = False
+        added = True #  TODO: delete this
+        return added
+
+    # def del_documents(self, filelist):
+    #     v_dict = self.db.docstore._dict
+    #     data_rows = []
+
+    #     for file in filelist:
+    #         chunck_list = vector_df.loc[vector_df['document']==document]['chunk_id'].tolist()
+
+    #         self.db.delete(chunck_list)
+
+    def delete_documents(self, document) -> bool:  # TODO: making it
+        return True
+    #     vector_df = self.store_to_df()
+    #     chunck_list = vector_df.loc[vector_df['document']==document]['chunk_id'].tolist()
+    #     self.db.delete(chunck_list)
