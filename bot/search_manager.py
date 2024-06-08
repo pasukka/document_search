@@ -89,20 +89,9 @@ class DocumentSearcherManager:
         return path
 
     async def restart(self, chat_id: int) -> None:
-        await self.clean_user_dir(chat_id)
-
-    async def change_docs_path(self, chat_id: int) -> bool:
-        changed = True
-        user_dir_path = await self.get_user_dir(chat_id)
-        if user_dir_path != "" and os.path.exists(user_dir_path):
-            self.doc_searcher.change_docs_path(user_dir_path)
-            self.manager_logger.logger.info(
-                f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
-        else:
-            changed = False
-            self.manager_logger.logger.info(
-                f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
-        return changed
+        await self.clean_user_dir(chat_id=chat_id)
+        self.manager_logger.logger.info(
+            f"Chat: {chat_id} - Restarting manager.")
 
     async def get_path(self, chat_id: int) -> str:
         user_dir_path = await self.get_user_dir(chat_id)
@@ -139,7 +128,6 @@ class DocumentSearcherManager:
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Removing user directory: {user_dir}.")
         self.doc_searcher.restart()
-        self.doc_searcher.change_docs_path()
         self.manager_logger.logger.info(
             f"Chat: {chat_id} - Restarting and cleaning user directory.")
         return user_dir
@@ -151,18 +139,11 @@ class DocumentSearcherManager:
                 os.remove(os.path.join(user_dir, f))
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Removing files.")
-            new_path = user_dir
-            filelist = [f for f in os.listdir(user_dir)
-                        if f.split('.')[1] == 'txt']
+            filelist = [f for f in os.listdir(
+                user_dir) if f.split('.')[1] == 'txt']
+            self.doc_searcher.context_retriever.delete_documents(filelist)
             if len(filelist) == 0:
-                self.manager_logger.logger.info(
-                    f"Chat: {chat_id} - Removing directory {user_dir}.")
-                self.manager_logger.logger.info(
-                    f"Chat: {chat_id} - Directory {user_dir} does not contain files for searching.")
-                self.doc_searcher.restart()
-                new_path = self.doc_searcher.docs_path
-                shutil.rmtree(user_dir)
-            self.doc_searcher.change_docs_path(new_path)
+                self.clean_user_dir(user_dir=user_dir)
             self.manager_logger.logger.info(
                 f"Chat: {chat_id} - Removed directory {user_dir}.")
         except Exception as e:
@@ -184,6 +165,27 @@ class DocumentSearcherManager:
     async def check_psw(self, chat_id, psw: str) -> bool:
         return (psw == await get_adm_psw())
 
-    def switch_to_debug(self):
+    def switch_to_debug(self) -> None:
         self.debug = True
         self.doc_searcher.switch_to_debug()
+
+    async def change_docs_path(self, chat_id: int) -> bool:
+        changed = True
+        user_dir_path = await self.get_user_dir(chat_id)
+        if user_dir_path != "" and os.path.exists(user_dir_path):
+            self.doc_searcher.change_docs_path(user_dir_path)
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
+        else:
+            changed = False
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
+        return changed
+
+    async def add_document(self, chat_id: int, file_name: str) -> bool:
+        changed = False
+        if await self.doc_searcher.context_retriever.add_document(file_name):
+            changed = await self.change_docs_path(chat_id)
+            self.manager_logger.logger.info(
+                f"Chat: {chat_id} - Changing path.")
+        return changed
