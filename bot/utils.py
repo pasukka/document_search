@@ -65,7 +65,7 @@ async def download_docs(message: types.Message, bot: Bot, file_name: str):
         await bot.download_file(file_info.file_path, path + file_name)
         bot_logger.logger.info(
             f"Chat: {message.chat.id} - Downloaded file {file_name} to path: {path}.")
-        await ds_controller.change_docs_path(message.chat.id)
+        await ds_controller.add_document(message.chat.id, path + file_name)
         await message.answer(ds_controller.metadata["response"]["file_loaded_response"].replace("{file}", f"*{file_name}*"),
                              parse_mode='Markdown')
     except Exception as e:
