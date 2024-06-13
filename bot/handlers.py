@@ -55,7 +55,7 @@ async def handle_clean(message: types.Message):
 @router.message(Command("docs_list"))
 async def handle_docs_list(message: types.Message, dialog_manager: DialogManager):
     if ds_controller.docs_path == ds_controller.doc_searcher.docs_path:
-        await message.answer(f"Используйте /my_docs, чтобы перейти к вашей папке")
+        await message.answer(f"Используйте /my_docs, чтобы перейти к вашей папке.")
         bot_logger.info(f"Chat: {message.chat.id} - Not user's dir.")
     else:
         bot_logger.info(
