@@ -149,6 +149,7 @@ class ContextRetriever:
             data_rows.append({"id": k, "name": doc_name,
                               "content": content})
         vector_df = pd.DataFrame(data_rows)
+        self.logger.info("Database made in df.")
         return vector_df
 
     def find_db_doc(self, df_db, document_name: str) -> str:
@@ -157,7 +158,6 @@ class ContextRetriever:
     def delete_documents(self, documents: list) -> bool:
         deleted = True
         df_db = self.database_to_df()
-        self.logger.info("Database made in df.")
         id_to_remove = []
         try:
             for doc in documents:
