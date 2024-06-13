@@ -1,10 +1,11 @@
+import os
 import pytest
 from aiogram import types
 from aiogram_dialog import StartMode
 
 from bot import handlers
 from bot.bot import ds_controller
-from database.database import create_database, close_db
+from database.database import create_database, close_db, create_chat, delete_chat
 from bot.states import CallBackForm, DeleteFilesForm
 
 
@@ -55,9 +56,9 @@ async def test_start():
     await create_database()
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handlers.handle_start(message=message_mock)
+    await close_db()
     assert message_mock.answers[0] == ds_controller.metadata["info"]["start_info"].replace(
         "_", "\\_")
-    await close_db()
 
 
 @pytest.mark.asyncio
@@ -66,9 +67,9 @@ async def test_help():
     await create_database()
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handlers.handle_help(message=message_mock)
+    await close_db()
     assert message_mock.answers[0] == ds_controller.metadata["info"]["help_info"].replace(
         "_", "\\_")
-    await close_db()
 
 
 @pytest.mark.asyncio
@@ -77,22 +78,21 @@ async def test_clean():
     await create_database()
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handlers.handle_clean(message=message_mock)
+    await close_db()
     assert message_mock.answers[0] == ds_controller.metadata["response"]["deleting_file_response"]
     assert message_mock.answers[1] == ds_controller.metadata["info"]["clean_info"]
-    await close_db()
 
 
 @pytest.mark.asyncio
 async def test_docs_list():
     text_mock = "/docs_list"
     await create_database()
-    message_mock = MockMessage(text=text_mock, chat_id=1223)
+    chat_id = 1
+    message_mock = MockMessage(text=text_mock, chat_id=chat_id)
     manager_mock = MockDialogManager()
     await handlers.handle_docs_list(message=message_mock, dialog_manager=manager_mock)
-    assert message_mock.answers[0] == f"Количество файлов: *0*"
-    assert manager_mock.state == DeleteFilesForm.list_files
-    assert manager_mock.mode == StartMode.RESET_STACK
     await close_db()
+    assert message_mock.answers[0] == f"Используйте /my_docs, чтобы перейти к вашей папке."
 
 
 @pytest.mark.asyncio
@@ -101,8 +101,28 @@ async def test_my_docs():
     await create_database()
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handlers.handle_search(message=message_mock)
-    assert message_mock.answers[0] == ds_controller.metadata["response"]["no_search_response"]
     await close_db()
+    assert message_mock.answers[0] == ds_controller.metadata["response"]["no_search_response"]
+
+
+@pytest.mark.asyncio
+async def test_docs_list_with_chat():
+    text_mock = "/docs_list"
+    chat_id = 1
+    path = 'documents/chat_1/'
+    await create_database()
+    await create_chat(chat_id, 'private', path)
+
+    message_mock = MockMessage(text=text_mock, chat_id=chat_id)
+    manager_mock = MockDialogManager()
+
+    await handlers.handle_search(message=message_mock)
+    await handlers.handle_docs_list(message=message_mock, dialog_manager=manager_mock)
+    await delete_chat(chat_id)
+    await close_db()
+    assert message_mock.answers[1] == f"Количество файлов: *1*"
+    assert manager_mock.state == DeleteFilesForm.list_files
+    assert manager_mock.mode == StartMode.RESET_STACK
 
 
 @pytest.mark.asyncio
@@ -119,8 +139,9 @@ async def test_callback():
     text_mock = "some user error"
     message_mock = MockMessage(text=text_mock, chat_id=1223)
     await handlers.write_callback(message=message_mock, state=state)
-    assert message_mock.answers[0] == ds_controller.metadata["response"]["callback_response"]
     await close_db()
+    assert message_mock.answers[0] == ds_controller.metadata["response"]["callback_response"]
+    
 
 
 @pytest.mark.asyncio
@@ -131,8 +152,8 @@ async def test_cancel():
     call = MockCall(message_mock)
     await create_database()
     await handlers.cancel(call=call, state=state)
-    assert message_mock.answers[0] == ds_controller.metadata["response"]["cancelling_response"]
     await close_db()
+    assert message_mock.answers[0] == ds_controller.metadata["response"]["cancelling_response"]
 
 
 @pytest.mark.asyncio
@@ -142,8 +163,8 @@ async def debug_mode():
     state = MockState()
     await create_database()
     await handlers.handle_debug_mode(message=message_mock, state=state)
-    assert message_mock.answers[0] == "Введите пароль"
     await close_db()
+    assert message_mock.answers[0] == "Введите пароль"
 
 
 @pytest.mark.asyncio
@@ -158,11 +179,11 @@ async def debug_mode():
     assert message_mock.answers[0] == ds_controller.metadata["error"]["error_file_format"]
     doc.file_name = "file.txt"
     await handlers.handle_document(message=message_mock, bot=bot)
+    await close_db()
     assert message_mock.answers[0] == ds_controller.metadata["response"]["loading_file_response"].replace(
         "{file}", f"*{doc.file_name}*")
     assert message_mock.answers[0] == ds_controller.metadata["response"]["file_loaded_response"].replace(
         "{file}", f"*{doc.file_name}*")
-    await close_db()
 
 
 @pytest.mark.asyncio
@@ -175,5 +196,5 @@ async def debug_mode():
 
     message_mock.text = "📤 Загрузить файл"
     await handlers.handle_message(message=message_mock)
-    assert message_mock.answers[0] == ds_controller.metadata["response"]["load_file_response"]
     await close_db()
+    assert message_mock.answers[0] == ds_controller.metadata["response"]["load_file_response"]

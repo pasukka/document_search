@@ -78,13 +78,14 @@ class DocumentSearcherManager:
             path = (await get_files_path(chat_id))
             path = path[0] if path != None else self.docs_path
             self.bot_logger.info(
-                f"Chat: {chat_id} - Got user path from database.")
+                f"Chat: {chat_id} - Got user path ({path}) from database.")
         except ChatPathError as e:
             self.bot_logger.warning(
                 f"Chat: {chat_id} - Error occurred while creating chat.")
             self.bot_logger.exception(e)
         if path == "":
             self.bot_logger.exception(NoChatError(chat_id))
+            self.bot_logger.info(f"No chat {chat_id}")
             path = self.docs_path
         return path
 
@@ -135,17 +136,17 @@ class DocumentSearcherManager:
     async def remove_chosen_files(self, chat_id: int, filelist: list) -> str:
         user_dir = await self.get_user_dir(chat_id)
         try:
-            self.doc_searcher.context_retriever.delete_documents(filelist)
-            for f in filelist:
-                os.remove(os.path.join(user_dir, f))
-            self.manager_logger.info(
-                f"Chat: {chat_id} - Removing files.")
-            filelist = [f for f in os.listdir(
-                user_dir) if f.split('.')[1] == 'txt']
-            if len(filelist) == 0:
-                await self.clean_user_dir(user_dir=user_dir)
-            self.manager_logger.info(
-                f"Chat: {chat_id} - Removed directory {user_dir}.")
+            if self.doc_searcher.context_retriever.delete_documents(filelist):
+                for f in filelist:
+                    os.remove(os.path.join(user_dir, f))
+                self.manager_logger.info(
+                    f"Chat: {chat_id} - Removing files.")
+                filelist = [f for f in os.listdir(
+                    user_dir) if f.split('.')[1] == 'txt']
+                if len(filelist) == 0:
+                    await self.clean_user_dir(user_dir=user_dir)
+                self.manager_logger.info(
+                    f"Chat: {chat_id} - Removed directory {user_dir}.")
         except Exception as e:
             self.manager_logger.error(
                 f"Chat: {chat_id} - Error occurred: {e}.")
@@ -172,7 +173,7 @@ class DocumentSearcherManager:
     async def change_docs_path(self, chat_id: int) -> bool:
         changed = True
         user_dir_path = await self.get_user_dir(chat_id)
-        if user_dir_path != "" and os.path.exists(user_dir_path):
+        if os.path.exists(user_dir_path):
             self.doc_searcher.change_docs_path(user_dir_path)
             self.manager_logger.info(
                 f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")

@@ -163,7 +163,8 @@ class ContextRetriever:
             for doc in documents:
                 id_to_remove += self.find_db_doc(df_db, doc)
             # print("IDS: ", id_to_remove)
-            self.db.delete(id_to_remove)
+            if id_to_remove:
+                self.db.delete(id_to_remove)
             # print(self.database_to_df())
         except Exception as e:
             self.logger.exception(e)

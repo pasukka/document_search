@@ -103,10 +103,11 @@ async def test_remove_chosen_files():
     await create_chat(id, 'private', path)
     await sm.remove_chosen_files(id, filelist)
     filelist = await sm.get_docs_list(id)
-    assert len(filelist) == 0
-    make_path(path)
     await delete_chat(id)
     await close_db()
+    assert len(filelist) == 0
+    make_path(path)
+    
 
 
 @pytest.mark.asyncio
@@ -122,10 +123,11 @@ async def test_remove_chosen_files_error():
         filelist = await sm.get_docs_list(id)
     except ChatPathError:
         pass
-    assert len(filelist) == 0
-    make_path(path)
     await delete_chat(id)
     await close_db()
+    assert len(filelist) == 0
+    make_path(path)
+    
 
 
 # TODO: ask

@@ -40,7 +40,7 @@ async def create_admin(psw: str):
             admin = None
         if not admin:
             cursor.execute(
-                f"INSERT INTO users (username, password) VALUES('admin', '{psw}')")
+                f"INSERT INTO users (username, password) VALUES('admin', ?)", (psw))
             db.commit()
     except Exception as e:
         db_logger.logger.error(f"Error while creating admin")
@@ -54,7 +54,7 @@ async def create_chat(chat_id: int, chat_type: str, files_path: str):
             f"SELECT 1 FROM chat_info WHERE chat_id == '{chat_id}'").fetchone()
         if not chat:
             cursor.execute(
-                f"INSERT INTO chat_info (chat_id, chat_type, files_path) VALUES({chat_id}, '{chat_type}', '{files_path}')")
+                f"INSERT INTO chat_info (chat_id, chat_type, files_path) VALUES(?, ?, ?)", (chat_id, chat_type, files_path))
             db.commit()
         db_logger.logger.info(f"Created chat {chat_id}")
     except Exception as e:
