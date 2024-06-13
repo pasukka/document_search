@@ -9,6 +9,24 @@ class Logger:
         self.formatter = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(message)s')
 
+    def info(self, text: str):
+        self.logger.info(text)
+
+    def debug(self, text: str):
+        self.logger.debug(text)
+
+    def warning(self, text: str):
+        self.logger.warning(text)
+
+    def exception(self, text: str):
+        self.logger.exception(text)
+
+    def error(self, text: str):
+        self.logger.error(text)
+
+    def critical(self, text: str):
+        self.logger.critical(text)
+
 
 class BotLogger(Logger):
 

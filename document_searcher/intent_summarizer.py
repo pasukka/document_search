@@ -24,13 +24,14 @@ class IntentSummarizer:
     def __call__(self, query: str, chat_history: str) -> str:
         prompt = self.prompt_template.replace('{chat_history}', chat_history)
         prompt = prompt.replace('{query}', query)
-        self.logger.logger.info("Customized prompt for intent summarization.")
+        self.logger.info("Customized prompt for intent summarization.")
         response = self.llm.text_generation(prompt,
                                             do_sample=False,
+                                            stop_sequences=['\n'],
                                             max_new_tokens=100).strip()
         if self.debug:
-            self.logger.logger.debug(f"QUERY: {query}")
-            self.logger.logger.debug(f"PROMPT: {prompt}")
-            self.logger.logger.debug(f"RESPONSE: {response}")
-        self.logger.logger.info("Got LLM response for intent summarization.")
+            self.logger.debug(f"QUERY: {query}")
+            self.logger.debug(f"PROMPT: {prompt}")
+            self.logger.debug(f"RESPONSE: {response}")
+        self.logger.info("Got LLM response for intent summarization.")
         return response
