@@ -31,22 +31,22 @@ class DocumentSearcherManager:
         error_str = ""
         if type(error) == document_searcher.errors.TimeError:
             error_str = self.metadata["error"]["error_runtime"]
-            self.bot_logger.logger.error(f"Chat: {id} - RunTime error.")
-            self.manager_logger.logger.error(f"Chat: {id} - RunTime error.")
+            self.bot_logger.error(f"Chat: {id} - RunTime error.")
+            self.manager_logger.error(f"Chat: {id} - RunTime error.")
         elif type(error) == document_searcher.errors.TokenError:
             error_str = self.metadata["error"]["error_token_response"]
-            self.bot_logger.logger.error(
+            self.bot_logger.error(
                 f"Chat: {id} - Token expired. Needs changing.")
-            self.manager_logger.logger.error(
+            self.manager_logger.error(
                 f"Chat: {id} - Token expired. Needs changing.")
         elif type(error) == document_searcher.errors.FileError:
             error_str = self.metadata["error"]["error_file"]
-            self.bot_logger.logger.error(f"Chat: {id} - File error.")
-            self.manager_logger.logger.error(f"Chat: {id} - File error.")
+            self.bot_logger.error(f"Chat: {id} - File error.")
+            self.manager_logger.error(f"Chat: {id} - File error.")
         else:
             error_str = self.metadata["error"]["unknown_error_response"]
-            self.bot_logger.logger.error(f"Chat: {id} - Error: {error}.")
-            self.manager_logger.logger.error(f"Chat: {id} - Error: {error}.")
+            self.bot_logger.error(f"Chat: {id} - Error: {error}.")
+            self.manager_logger.error(f"Chat: {id} - Error: {error}.")
         return error_str
 
     def ask(self, message: str, id: int) -> str:
@@ -55,18 +55,18 @@ class DocumentSearcherManager:
             try:
                 answer = self.doc_searcher.ask(message)
                 if self.debug:
-                    self.manager_logger.logger.debug(
+                    self.manager_logger.debug(
                         f"Chat: {id} - doc_searcher answer:\n{answer}.")
                 self.retries += 1
                 time.sleep(4)
             except Exception as e:
                 answer = self.get_error_message(e, id)
                 if self.debug:
-                    self.manager_logger.logger.debug(
+                    self.manager_logger.debug(
                         f"Chat: {id} - answer after error:\n{answer}.")
-                self.manager_logger.logger.exception(e)
+                self.manager_logger.exception(e)
         self.retries = 0
-        self.manager_logger.logger.info(f"Chat: {id} - Got answer from LLM.")
+        self.manager_logger.info(f"Chat: {id} - Got answer from LLM.")
         return answer
 
     def make_user_dir(self, chat_id: int) -> str:
@@ -77,27 +77,27 @@ class DocumentSearcherManager:
         try:
             path = (await get_files_path(chat_id))
             path = path[0] if path != None else self.docs_path
-            self.bot_logger.logger.info(
+            self.bot_logger.info(
                 f"Chat: {chat_id} - Got user path from database.")
         except ChatPathError as e:
-            self.bot_logger.logger.warning(
+            self.bot_logger.warning(
                 f"Chat: {chat_id} - Error occurred while creating chat.")
-            self.bot_logger.logger.exception(e)
+            self.bot_logger.exception(e)
         if path == "":
-            self.bot_logger.logger.exception(NoChatError(chat_id))
+            self.bot_logger.exception(NoChatError(chat_id))
             path = self.docs_path
         return path
 
     async def restart(self, chat_id: int) -> None:
         await self.clean_user_dir(chat_id=chat_id)
-        self.manager_logger.logger.info(
+        self.manager_logger.info(
             f"Chat: {chat_id} - Restarting manager.")
 
     async def get_path(self, chat_id: int) -> str:
         user_dir_path = await self.get_user_dir(chat_id)
         if not os.path.exists(user_dir_path):
             os.makedirs(user_dir_path)
-        self.manager_logger.logger.info(
+        self.manager_logger.info(
             f"Chat: {chat_id} - Got user directory path {user_dir_path}.")
         return user_dir_path
 
@@ -107,58 +107,58 @@ class DocumentSearcherManager:
         if os.path.exists(user_dir_path):
             filelist = [f for f in os.listdir(
                 user_dir_path) if f.split('.')[1] == 'txt']
-        self.manager_logger.logger.info(
+        self.manager_logger.info(
             f"Chat: {chat_id} - Got documents list.")
         return filelist
 
     async def clean_all_user_dirs(self) -> None:
         dirlist = [f for f in os.listdir(self.docs_path)
                    if f.startswith('chat_')]
-        self.manager_logger.logger.info(f"Starting cleaning all directories.")
+        self.manager_logger.info(f"Starting cleaning all directories.")
         for dir in dirlist:
             await self.clean_user_dir(user_dir=self.docs_path+dir)
 
     async def clean_user_dir(self, chat_id=None, user_dir="") -> str:
         if chat_id != None:
             user_dir = await self.get_user_dir(chat_id)
-            self.manager_logger.logger.info(
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Got user directory: {user_dir}.")
         if os.path.exists(user_dir) and user_dir != self.docs_path:
             shutil.rmtree(user_dir)
-            self.manager_logger.logger.info(
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Removing user directory: {user_dir}.")
         self.doc_searcher.restart()
-        self.manager_logger.logger.info(
+        self.manager_logger.info(
             f"Chat: {chat_id} - Restarting and cleaning user directory.")
         return user_dir
 
     async def remove_chosen_files(self, chat_id: int, filelist: list) -> str:
         user_dir = await self.get_user_dir(chat_id)
         try:
+            self.doc_searcher.context_retriever.delete_documents(filelist)
             for f in filelist:
                 os.remove(os.path.join(user_dir, f))
-            self.manager_logger.logger.info(
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Removing files.")
             filelist = [f for f in os.listdir(
                 user_dir) if f.split('.')[1] == 'txt']
-            self.doc_searcher.context_retriever.delete_documents(filelist)
             if len(filelist) == 0:
-                self.clean_user_dir(user_dir=user_dir)
-            self.manager_logger.logger.info(
+                await self.clean_user_dir(user_dir=user_dir)
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Removed directory {user_dir}.")
         except Exception as e:
-            self.manager_logger.logger.error(
+            self.manager_logger.error(
                 f"Chat: {chat_id} - Error occurred: {e}.")
-            self.manager_logger.logger.exception(e)
-            pass
+            self.manager_logger.exception(e)
+            raise e
         return user_dir
 
     def callback(self, chat_id: str, message: str) -> str:
         date_now = datetime.datetime.now()
         id = f"{str(chat_id)}-{str(date_now.date())}-{str(date_now.hour)}-{str(date_now.minute)}"
-        self.user_feedback_logger.logger.warning(
+        self.user_feedback_logger.warning(
             f'Id: {id} - Chat_id: {chat_id}\nMessage: {message}')
-        self.manager_logger.logger.info(
+        self.manager_logger.info(
             f"Chat: {chat_id} - Saved feedback id={id}.")
         return id
 
@@ -174,18 +174,18 @@ class DocumentSearcherManager:
         user_dir_path = await self.get_user_dir(chat_id)
         if user_dir_path != "" and os.path.exists(user_dir_path):
             self.doc_searcher.change_docs_path(user_dir_path)
-            self.manager_logger.logger.info(
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Changed documents path to {user_dir_path}.")
         else:
             changed = False
-            self.manager_logger.logger.info(
+            self.manager_logger.info(
                 f"Chat: {chat_id} - Empty documents path {user_dir_path}. No changes.")
         return changed
 
-    async def add_document(self, chat_id: int, file_name: str) -> bool:
+    async def add_document(self, chat_id: int, path: str, file_name: str) -> bool:
         changed = False
-        if await self.doc_searcher.context_retriever.add_document(file_name):
+        if await self.doc_searcher.context_retriever.add_document(path, file_name):
             changed = await self.change_docs_path(chat_id)
-            self.manager_logger.logger.info(
-                f"Chat: {chat_id} - Changing path.")
+            self.manager_logger.info(
+                f"Chat: {chat_id} - Changing path to {path}.")
         return changed
