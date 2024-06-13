@@ -152,20 +152,19 @@ class ContextRetriever:
         return vector_df
 
     def find_db_doc(self, df_db, document_name: str) -> str:
-        # print(df_db)
         return df_db.loc[df_db['name'] == document_name]['id'].tolist()
 
     def delete_documents(self, documents: list) -> bool:
         deleted = True
         df_db = self.database_to_df()
+        self.logger.info("Database made in df.")
         id_to_remove = []
         try:
             for doc in documents:
                 id_to_remove += self.find_db_doc(df_db, doc)
-            # print("IDS: ", id_to_remove)
             if id_to_remove:
+                self.logger.info("Non-empty ids of document to be removed.")
                 self.db.delete(id_to_remove)
-            # print(self.database_to_df())
         except Exception as e:
             self.logger.exception(e)
             deleted = False
